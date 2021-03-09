@@ -1,0 +1,33 @@
+module MLJIteration
+
+using MLJBase
+using IterationControl
+import IterationControl: debug, skip, composite
+
+export IteratedModel
+
+const CONTROLS = vcat(IterationControl.CONTROLS,
+                      [:WithIterationsDo,
+                       :Save])
+
+# re-export from IterationControl.jl:
+for control in CONTROLS
+    eval(:(export $control))
+end
+
+const CONTROLS_DEFAULT = [Step(10),
+                          Patience(5),
+                          GL(),
+                          TimeLimit(0.03), # about 2 mins
+                          NotANumber()],
+
+include("utilities.jl")
+include("constructors.jl")
+include("traits.jl")
+include("ic_model.jl")
+include("controls.jl")
+include("core.jl")
+
+
+end # module
+
