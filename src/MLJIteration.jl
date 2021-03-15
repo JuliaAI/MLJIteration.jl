@@ -8,6 +8,7 @@ export IteratedModel
 
 const CONTROLS = vcat(IterationControl.CONTROLS,
                       [:WithIterationsDo,
+                       :WithEvaluationDo,
                        :Save])
 
 # re-export from IterationControl.jl:
@@ -30,4 +31,3 @@ include("core.jl")
 
 
 end # module
-
