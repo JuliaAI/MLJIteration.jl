@@ -154,6 +154,7 @@ control                          | description
 `Threshold(value=0.0)`           | Stop when `loss < value`
 `Patience(n=5)`                  | Stop after `n` consecutive loss increases
 `MLJIteration.skip(control, p=1)`| Apply `control` but only every `p` cycles.
+`Save(filename="machine.jlso")`  | Save `train_mach` machine to file
 
 A control is permitted to mutate the fields (hyper-parameters) of
 `train_mach.model` (the clone of `model`). For example, to mutate a
