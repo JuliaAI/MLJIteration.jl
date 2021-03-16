@@ -102,6 +102,10 @@ end
     losses4 = report(mach2).training_losses
     yhat4 = predict(mach2, X[test])
 
+    # check report:
+    r = report(mach2)
+    
+
     # compare:
     @test losses3 ≈ losses4
     @test yhat3 ≈ yhat4

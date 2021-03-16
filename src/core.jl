@@ -1,10 +1,37 @@
+# helper for `fit` and `update`:
+function production_mach(iterated_model,
+                         ic_model,
+                         iteration_param,
+                         verbosity,
+                         data...)
+    train_mach = IterationControl.expose(ic_model)
+    if iterated_model.final_train &&
+        iterated_model.resampling !== nothing
+        clone = deepcopy(iterated_model.model)
+        # set iteration parameter to value at end of controlled
+        # training:
+        n_iterations = rget(train_mach.model, iteration_param)
+        rset!(clone, iteration_param, n_iterations)
+        prod_mach = machine(clone,
+                            data...;
+                            cache=iterated_model.cache)
+        verbosity < 1 ||
+            @info "Retraining on all provided data. "*
+            "To suppress, specify `final_train=false`. "
+        fit!(prod_mach, verbosity=verbosity - 1)
+    else
+        train_mach
+    end
+end
+
 function MLJBase.fit(iterated_model::EitherIteratedModel, verbosity, data...)
 
     model = iterated_model.model
 
      # get name of iteration parameter:
      _iter = MLJBase.iteration_parameter(model)
-    iter = _iter === nothing ? iterated_model.iteration_parameter : _iter
+    iteration_param = _iter === nothing ?
+        iterated_model.iteration_param : _iter
 
     # instantiate `train_mach`:
     mach = if iterated_model.resampling === nothing
@@ -22,41 +49,29 @@ function MLJBase.fit(iterated_model::EitherIteratedModel, verbosity, data...)
     end
 
     # instantiate the object to be iterated using IterationControl.jl:
-    ic_model = ICModel(mach, iter, verbosity)
+    ic_model = ICModel(mach, iteration_param, verbosity)
 
     # train with controls:
     creport = IterationControl.train!(ic_model,
                                       iterated_model.controls...,
                                       verbosity=verbosity)
 
-    # retrain on all data if necessary:
-    train_mach = IterationControl.expose(ic_model)
-    production_mach = if iterated_model.final_train &&
-        iterated_model.resampling !== nothing
-        clone = deepcopy(model)
-        # set iteration parameter to value at end of controlled
-        # training:
-        n_iterations = rget(train_mach.model, iter)
-        rset!(clone, iter, n_iterations)
-        production_mach = machine(clone,
-                                  data...;
-                                  cache=iterated_model.cache)
-        verbosity < 1 ||
-            @info "Retraining on all provided data. "*
-            "To suppress, specify `final_train=false`. "
-        fit!(production_mach, verbosity=verbosity - 1)
-    else
-        train_mach
-    end
+    # retrains on all data if necessary:
+    prod_mach = production_mach(iterated_model,
+                                ic_model,
+                                iteration_param,
+                                verbosity,
+                                data...)
 
-    verbosity < 1 || @info "Total of $(rget(production_mach.model, iter)) "*
+    verbosity < 1 ||
+        @info "Total of $(rget(prod_mach.model, iteration_param)) "*
         "iterations. "
 
-    fitresult = production_mach
+    fitresult = prod_mach
     cache = ic_model
-    report = (model_report=MLJBase.report(production_mach),
+    report = (model_report=MLJBase.report(prod_mach),
               controls=creport,
-              niterations=rget(train_mach, iter))
+              niterations=rget(prod_mach, iteration_param))
     return fitresult, cache, report
 
 end
