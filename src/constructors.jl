@@ -74,13 +74,13 @@ same number of iterations, once controlled iteration has stopped.
 Specify `resampling=nothing` if all data is to be used for controlled
 iteration, with each out-of-sample loss replaced by the most recent
 training loss, assuming this is made available by the model
-(`supports_training_losses(model)==true`). Otherwise, `resampling`
+(`supports_training_losses(model) == true`). Otherwise, `resampling`
 must have type `Holdout`.
 
-Assuming `final_train==true` or `resampling==nothing`,
+Assuming `final_train=true` or `resampling=nothing`,
 `iterated_model` behaves exactly like the original `model` but with
 the iteration parameter automatically selected. If
-`final_train==false` (default) and `resampling!=nothing`, then
+`final_train=false` (default) and `resampling` is not `nothing`, then
 `iterated_model` behaves like the original model trained on a subset
 of the provided data.
 
@@ -95,9 +95,9 @@ Given an instance `iterated_model` of `IteratedModel`, calling
 `fit!(mach)` on a machine `mach = machine(iterated_model, data...)`
 performs the following actions:
 
-- The `data` is split into *train* and *test* sets, according to the
-  specified `resampling` strategy, which must have type `Holdout` or
-  be `nothing`.
+- Assuming `resampling !== nothing`, the `data` is split into *train* and
+  *test* sets, according to the specified `resampling` strategy, which
+  must have type `Holdout`.
 
 - A clone of the wrapped model, `iterated_model.model`, is bound to
   the train data in an internal machine, `train_mach`. If `resampling
@@ -105,7 +105,7 @@ performs the following actions:
   to which controls are applied. For example, `Callback(fitted_params
   |> print)` will print the value of `fitted_params(train_mach)`.
 
-- The iteration parameter of the clone is set to `1`.
+- The iteration parameter of the clone is set to `0`.
 
 - The specified `controls` are repeatedly applied to `train_mach` in
   sequence, until one of the controls triggers a stop. Loss-based
@@ -119,7 +119,7 @@ performs the following actions:
 
 - Once a stop has been triggered, a clone of `model` is bound to all
   `data` in a machine called `mach_production` below, unless
-  `final_train==false` or `resampling==nothing`, in which case
+  `final_train == false` or `resampling === nothing`, in which case
   `mach_production` coincides with `train_mach`.
 
 
@@ -132,8 +132,7 @@ Xnew)`. Similar similar statements hold for `predict_mean`,
 
 ### Controls
 
-Every set of controls should include a `Step(...)` to avoid training
-hanging.
+Every set of controls should include a `Step(...)`, usually the first control.
 
 For a summary of all available controls, see
 [https://github.com/ablaom/IterationControl.jl#controls-provided](https://github.com/ablaom/IterationControl.jl#controls-provided). Basic
@@ -151,8 +150,8 @@ control                          | description
 `NotANumber()`                   | Stop when `NaN` encountered
 `Threshold(value=0.0)`           | Stop when `loss < value`
 `Patience(n=5)`                  | Stop after `n` consecutive loss increases
-`MLJIteration.skip(control, p=1)`| Apply `control` but only every `p` cycles.
 `Save(filename="machine.jlso")`  | Save `train_mach` machine to file
+`MLJIteration.skip(control, p=1)`| Apply `control` but only every `p` cycles.
 
 A control is permitted to mutate the fields (hyper-parameters) of
 `train_mach.model` (the clone of `model`). For example, to mutate a
@@ -163,6 +162,8 @@ learning rate one might use the control
 However, unless `model` supports warm restarts with respect to changes
 in that parameter, this will trigger retraining of `train_mach` from
 scratch, with a different training outcome, which is not recommended.
+
+See the MLJ documentation for user-defined controls.
 
 
 ### Warm restarts
