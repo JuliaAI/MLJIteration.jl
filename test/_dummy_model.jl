@@ -154,28 +154,29 @@ end
 
 end
 
+ using .DummyModel
 
 # # TEMPORARY TEST AREA
 
-using .DummyModel
 
-using MLJBase
 
-X, y = make_dummy(N=1000)
+# using MLJBase
 
-# train in stages:
-model = DummyIterativeModel(n=4)
-mach = machine(model, X, y) |> fit!
-model.n = 9
-fit!(mach)
-fp_stages = fitted_params(mach)
+# X, y = make_dummy(N=1000)
 
-# train in one hit:
-model = DummyIterativeModel(n=9)
-mach = machine(model, X, y) |> fit!
-fp_onehit = fitted_params(mach)
+# # train in stages:
+# model = DummyIterativeModel(n=4)
+# mach = machine(model, X, y) |> fit!
+# model.n = 9
+# fit!(mach)
+# fp_stages = fitted_params(mach)
 
-@assert fp_onehit == fp_stages
+# # train in one hit:
+# model = DummyIterativeModel(n=9)
+# mach = machine(model, X, y) |> fit!
+# fp_onehit = fitted_params(mach)
 
-@assert training_losses(mach) == report(mach).training_losses
-@assert length(training_losses(mach)) == 9
+# @assert fp_onehit == fp_stages
+
+# @assert training_losses(mach) == report(mach).training_losses
+# @assert length(training_losses(mach)) == 9

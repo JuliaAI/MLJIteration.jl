@@ -1,7 +1,3 @@
-const ERR_EVALUATION =
-    ArgumentError("`WithEvaluationDo` unsupported if `resampling=nothing`. ")
-
-
 # # ITERATIONS
 
 struct WithIterationsDo{F<:Function}
@@ -32,10 +28,7 @@ IterationControl.@create_docs(
 function IterationControl.update!(c::WithIterationsDo,
                                   ic_model,
                                   verbosity, state...)
-    # the atomic model begin mutated:
-    model = mlj_model(ic_model)
-
-    i = rget(model, ic_model.iter)
+    i = ic_model.n_iterations
     r = c.f(i)
     done = (c.stop_if_true && r isa Bool && r) ? true : false
     return (done = done, i = i)
@@ -86,14 +79,10 @@ IterationControl.@create_docs(
     "if the value returned by `f` is `true`, logging the "*
     "`stop_message` if specified. ")
 
-_evaluation(ic_model) = throw(ERR_EVALUATION)
-_evaluation(ic_model::ICModel{<:Machine{<:Resampler}}) =
-    MLJBase.evaluate(ic_model.machine)
-
 function IterationControl.update!(c::WithEvaluationDo,
                                   ic_model,
                                   verbosity, state...)
-    e = _evaluation(ic_model)
+    e = ic_model.evaluation
     r = c.f(e)
     done = (c.stop_if_true && r isa Bool && r) ? true : false
     return (done = done, )

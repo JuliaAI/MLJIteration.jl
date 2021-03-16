@@ -36,15 +36,15 @@ X, y = make_dummy(N=20)
     # compare:
     @test IterationControl.loss(ic_model) ≈ e
 
-    # test `Δn` is remembered:
-    @test ic_model.last_Δn[] == 6
+    # test `Δi` is remembered:
+    @test ic_model.Δi[] == 6
 
     # test training_losses:
     @test IterationControl.training_losses(ic_model) == losses[end - 5:end]
 
     # test expose:
     @test IterationControl.expose(ic_model) ==
-        fitted_params(ic_model.machine).machine
+        fitted_params(ic_model.mach).machine
     @test IterationControl.expose(MLJIteration.ICModel(mach, :n, 0)) == mach
 
     # test methods in case applying when `resampling == nothing`:
@@ -83,6 +83,27 @@ MLJBase.predict(::FooBar, ::Any, Xnew) = ones(length(Xnew))
                  IterationControl.training_losses(ic_model))
     @test_throws(MLJIteration.ERR_TRAINING_LOSSES,
                  IterationControl.loss(ic_model))
+end
+
+@testset "ICModel interface for users" begin
+    model=DummyIterativeModel(n=0)
+    resampling_machine =
+        machine(Resampler(model=model,
+                          resampling=Holdout(fraction_train=0.5),
+                          measure=l2),
+                X,
+                y)
+
+    ic_model = MLJIteration.ICModel(resampling_machine, :n, 0)
+    IterationControl.train!(ic_model, 4)
+    IterationControl.train!(ic_model, 6)
+    @test ic_model.machine == fitted_params(resampling_machine).machine
+    @test ic_model.machine.model == DummyIterativeModel(n=10)
+    @test ic_model.n_cycles == 2
+    @test ic_model.n_iterations == 10
+    @test ic_model.Δiterations == 6
+    @test ic_model.loss == IterationControl.loss(ic_model)
+    @test ic_model.training_losses == IterationControl.training_losses(ic_model)
 end
 
 end
