@@ -31,8 +31,6 @@ end
 const EitherIteratedModel{M} =
     Union{DeterministicIteratedModel{M},ProbabilisticIteratedModel{M}}
 
-MLJBase.is_wrapper(::Type{<:EitherIteratedModel}) = true
-
 const ERR_NO_MODEL =
     ArgumentError("You need to specify model=... ")
 const ERR_NOT_SUPERVISED =
