@@ -11,6 +11,7 @@ model = DummyIterativeModel(n=0)
 
 @testset "integration: resampling=nothing" begin
 
+    model = DummyIterativeModel(n=0)
     controls=[Step(2), Threshold(0.01), TimeLimit(0.005)]
 
     # using IterationControl.jl directly:
@@ -36,11 +37,54 @@ model = DummyIterativeModel(n=0)
     fit!(mach, verbosity=0)
     losses2 = report(mach).model_report.training_losses
     yhat2 = predict(mach, X)
+    @test imodel.model == DummyIterativeModel(n=0) # hygeine check
 
     # compare:
     @test losses1 ≈ losses2
     @test yhat1 ≈ yhat2
 
+    # report:
+    r = report(mach)
+    @test r.model_report.training_losses ≈ losses1
+    @test :controls in keys(r)
+    i = r.n_iterations
+    @test i == 38
+
+    # warm restart when changing controls:
+    noise(n) = fill((:info, r"43"), n)
+    imodel.controls = [Step(1),
+                       WithIterationsDo(i-> i>39,
+                                        stop_if_true=true),
+                       Info(x->"43")]
+    @test_logs((:info, r"Updating"),
+               noise(2)...,
+               (:info, r""),
+               (:info, r""),
+               fit!(mach))
+    @test report(mach).n_iterations == i + 2
+
+    # warm restart when changing model (trains one more iteration
+    # because stopping control comes after `Step(...)`:
+    imodel.model.n = 1
+    @test_logs((:info, r"Updating"),
+               noise(1)...,
+               (:info, r""),
+               (:info, r""),
+               fit!(mach))
+    @test report(mach).n_iterations == i + 3
+
+    # cold restart when changing anything else:
+    imodel.check_measure=false
+    imodel.controls = [Step(1),
+                       WithIterationsDo(i-> i>4,
+                                        stop_if_true=true),
+                       Info(x->"43")]
+    @test_logs((:info, r"Updating"),
+               noise(5)...,
+               (:info, r""),
+               (:info, r""),
+               fit!(mach))
+    @test report(mach).n_iterations == 5
 end
 
 @testset "integration: resampling=Holdout()" begin
@@ -104,12 +148,13 @@ end
 
     # check report:
     r = report(mach2)
-    
 
     # compare:
     @test losses3 ≈ losses4
     @test yhat3 ≈ yhat4
 end
+
+
 
 end
 

@@ -1,12 +1,15 @@
-# helper for `fit` and `update`:
+# # HELPERS FOR `FIT` AND `UPDATE`
+
+# either retrains new machine on all data or returns the machine
+# trained using controls (embedded in `ic_model`):
 function production_mach(iterated_model,
                          ic_model,
-                         iteration_param,
                          verbosity,
                          data...)
     train_mach = IterationControl.expose(ic_model)
     if iterated_model.final_train &&
         iterated_model.resampling !== nothing
+        iteration_param = ic_model.iteration_parameter
         clone = deepcopy(iterated_model.model)
         # set iteration parameter to value at end of controlled
         # training:
@@ -24,9 +27,30 @@ function production_mach(iterated_model,
     end
 end
 
+function finish(prod_mach, ic_model, iterated_model, creport, verbosity)
+
+    iteration_param = ic_model.iteration_parameter
+
+    verbosity < 1 ||
+        @info "Total of $(rget(prod_mach.model, iteration_param)) "*
+        "iterations. "
+
+    fitresult = prod_mach
+    cache = (ic_model=ic_model,
+             iterated_model=deepcopy(iterated_model))
+
+    report = (model_report=MLJBase.report(prod_mach),
+              controls=creport,
+              n_iterations=rget(prod_mach, iteration_param))
+    return fitresult, cache, report
+end
+
+
+# # IMPLEMENTATION OF MLJ MODEL INTERFACE
+
 function MLJBase.fit(iterated_model::EitherIteratedModel, verbosity, data...)
 
-    model = iterated_model.model
+    model = deepcopy(iterated_model.model)
 
      # get name of iteration parameter:
      _iter = MLJBase.iteration_parameter(model)
@@ -37,7 +61,7 @@ function MLJBase.fit(iterated_model::EitherIteratedModel, verbosity, data...)
     mach = if iterated_model.resampling === nothing
         machine(model, data...; cache=iterated_model.cache)
     else
-        resampler = MLJBase.Resampler(model=deepcopy(model),
+        resampler = MLJBase.Resampler(model=model,
                                   resampling=iterated_model.resampling,
                                   measure=iterated_model.measure,
                                   weights=iterated_model.weights,
@@ -59,20 +83,41 @@ function MLJBase.fit(iterated_model::EitherIteratedModel, verbosity, data...)
     # retrains on all data if necessary:
     prod_mach = production_mach(iterated_model,
                                 ic_model,
-                                iteration_param,
                                 verbosity,
                                 data...)
 
-    verbosity < 1 ||
-        @info "Total of $(rget(prod_mach.model, iteration_param)) "*
-        "iterations. "
+    return finish(prod_mach, ic_model, iterated_model, creport, verbosity)
 
-    fitresult = prod_mach
-    cache = ic_model
-    report = (model_report=MLJBase.report(prod_mach),
-              controls=creport,
-              niterations=rget(prod_mach, iteration_param))
-    return fitresult, cache, report
+end
+
+function MLJBase.update(iterated_model::EitherIteratedModel,
+                        verbosity,
+                        old_fitresult,
+                        old_cache,
+                        data...)
+
+    ic_model, old_iterated_model = old_cache
+
+    # cold restart if anything but `controls` or `model` altered:
+    if !MLJBase.is_same_except(iterated_model,
+                              old_iterated_model,
+                              :model, :controls)
+        return fit(iterated_model, verbosity, data...)
+    end
+
+    # otherwise, continue training with existing `ic_model`:
+    # train with controls:
+    creport = IterationControl.train!(ic_model,
+                                      iterated_model.controls...,
+                                      verbosity=verbosity)
+
+    # retrains on all data if necessary:
+    prod_mach = production_mach(iterated_model,
+                                ic_model,
+                                verbosity,
+                                data...)
+
+    return finish(prod_mach, ic_model, iterated_model, creport, verbosity)
 
 end
 

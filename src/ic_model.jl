@@ -8,7 +8,12 @@ const ERR_TRAINING_LOSSES =
 const ERR_EVALUATION =
     ArgumentError("`WithEvaluationDo` unsupported if `resampling=nothing`. ")
 
-# training machine wrappper:
+
+mlj_model(mach::Machine) = mach.model
+mlj_model(mach::Machine{<:Resampler}) = mach.model.model
+
+# training machine wrappper (constructor resets mlj model iterations
+# to zero):
 struct ICModel{M}
     mach::M
     iteration_parameter::Union{Symbol,Expr}
@@ -16,13 +21,19 @@ struct ICModel{M}
     n::Base.RefValue{Int64} # num calls to train!
     i::Base.RefValue{Int64} # num iterations
     Δi::Base.RefValue{Int64}
-    ICModel(mach::M, iteration_parameter, verbosity) where M =
-        new{M}(mach, iteration_parameter, verbosity, Ref(0), Ref(0), Ref(0))
+    function ICModel(mach::M, iteration_parameter, verbosity) where M
+        model = mlj_model(mach)
+        rset!(model, iteration_parameter, 0)
+        return new{M}(mach,
+                      iteration_parameter,
+                      verbosity,
+                      Ref(0),
+                      Ref(0),
+                      Ref(0))
+    end
 end
 
-mlj_model(ic_model::ICModel) = ic_model.mach.model
-mlj_model(ic_model::ICModel{<:Machine{<:Resampler}}) =
-    ic_model.mach.model.model
+mlj_model(ic_model::ICModel) = mlj_model(ic_model.mach)
 
 # overloading `train!`:
 function IterationControl.train!(m::ICModel, n::Int)

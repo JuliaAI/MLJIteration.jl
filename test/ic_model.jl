@@ -21,7 +21,6 @@ X, y = make_dummy(N=20)
     losses = training_losses(mach)
 
     # evaluate after 10 iterations using IterationControl, and in two stages:
-    model.n = 0
     resampling_machine =
         machine(Resampler(model=model,
                           resampling=Holdout(fraction_train=0.5),
