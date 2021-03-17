@@ -2,15 +2,7 @@
 EditURL = "<unknown>/../../MLJIteration/examples/tree_booster/tree_booster.jl"
 ```
 
-# Using IterationControl to train a tree-booster on the iris data set
-
-In this demonstration we show how to the controls in
-[IterationControl.jl](https://github.com/ablaom/IterationControl.jl)
-with an iterative
-[MLJ](https://github.com/alan-turing-institute/MLJ.jl) model, using
-our bare hands. (MLJ will ultimately provide its own canned
-`IteratedModel` wrapper to make this more convenient and
-compositional.)
+# Basic demonstration of IteratedModel wrapper for a tree booster
 
 ```@example tree_booster
 using Pkg
@@ -24,20 +16,13 @@ using Dates
 using Plots
 pyplot(size = (600, 300*(sqrt(5) - 1)))
 
-
 using Statistics
 using Random
 Random.seed!(123)
 
 MLJ.color_off()
-```
 
-Loading some data and splitting observation indices into test/train:
-
-```@example tree_booster
 X, y = make_moons(1000, rng=123)
-train, test = MLJ.partition(eachindex(y), 0.7);
-nothing #hide
 ```
 
 Import an model type:

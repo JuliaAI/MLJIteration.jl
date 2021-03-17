@@ -55,7 +55,7 @@ function MLJBase.fit(iterated_model::EitherIteratedModel, verbosity, data...)
      # get name of iteration parameter:
      _iter = MLJBase.iteration_parameter(model)
     iteration_param = _iter === nothing ?
-        iterated_model.iteration_param : _iter
+        iterated_model.iteration_parameter : _iter
 
     # instantiate `train_mach`:
     mach = if iterated_model.resampling === nothing
