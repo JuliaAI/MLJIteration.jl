@@ -113,7 +113,7 @@ resampler = MLJBase.Resampler(model=DummyIterativeModel(n=0),
 end
 
 @testset "Save" begin
-    c = Save("serialization_test")
+    c = Save("serialization_test.jlso")
     m = MLJIteration.ICModel(machine(DummyIterativeModel(n=0), X, y), :n, 0)
     IC.train!(m, 2)
     state = @test_logs((:info, "Saving \"serialization_test1.jlso\". "),

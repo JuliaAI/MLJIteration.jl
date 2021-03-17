@@ -130,7 +130,8 @@ function IterationControl.update!(c::Save,
                                   verbosity,
                                   state=(filenumber=0, ))
     filenumber = state.filenumber + 1
-    filename = string(c.filename, filenumber, ".jlso")
+    root, suffix = splitext(cfilename)
+    filename = string(root, filenumber, suffix)
     train_mach = IterationControl.expose(ic_model)
     verbosity > 0 && @info "Saving \"$filename\". "
     MLJBase.save(filename, train_mach, c.kwargs...)
