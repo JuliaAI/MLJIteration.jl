@@ -126,11 +126,11 @@ end
     @test losses1 ≈ losses2
     @test yhat1 ≈ yhat2
 
-    # now repeat wrapper train with final_train=true:
+    # now repeat wrapper train with retrain=true:
     imodel = IteratedModel(model=model,
                            resampling=Holdout(fraction_train=0.7),
                            controls=controls,
-                           final_train=true,
+                           retrain=true,
                            measure=mae)
     mach = machine(imodel, X, y)
     fit!(mach, verbosity=0)

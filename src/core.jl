@@ -7,7 +7,7 @@ function production_mach(iterated_model,
                          verbosity,
                          data...)
     train_mach = IterationControl.expose(ic_model)
-    if iterated_model.final_train &&
+    if iterated_model.retrain &&
         iterated_model.resampling !== nothing
         iteration_param = ic_model.iteration_parameter
         clone = deepcopy(iterated_model.model)
@@ -20,7 +20,7 @@ function production_mach(iterated_model,
                             cache=iterated_model.cache)
         verbosity < 1 ||
             @info "Retraining on all provided data. "*
-            "To suppress, specify `final_train=false`. "
+            "To suppress, specify `retrain=false`. "
         fit!(prod_mach, verbosity=verbosity - 1)
     else
         train_mach

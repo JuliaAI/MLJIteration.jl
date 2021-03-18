@@ -8,7 +8,7 @@ mutable struct DeterministicIteratedModel{M<:Deterministic} <: MLJBase.Determini
     weights::Union{Nothing,Vector{<:Real}}
     class_weights::Union{Nothing,Dict{Any,<:Real}}
     operation
-    final_train::Bool
+    retrain::Bool
     check_measure::Bool
     iteration_parameter::Union{Nothing,Symbol,Expr}
     cache::Bool
@@ -22,7 +22,7 @@ mutable struct ProbabilisticIteratedModel{M<:Probabilistic} <: MLJBase.Probabili
     weights::Union{Nothing,AbstractVector{<:Real}}
     class_weights::Union{Nothing,Dict{Any,<:Real}}
     operation
-    final_train::Bool
+    retrain::Bool
     check_measure::Bool
     iteration_parameter::Union{Nothing,Symbol,Expr}
     cache::Bool
@@ -48,7 +48,7 @@ const ERR_NEED_PARAMETER =
 """
     IteratedModel(model=nothing,
                   controls=$CONTROLS_DEFAULT,
-                  final_train=false,
+                  retrain=false,
                   resampling=Holdout(),
                   measure=nothing,
                   weights=nothing,
@@ -73,7 +73,7 @@ creating your own controls, refer to the documentation just cited.
 
 To make out-of-sample losses available to the controls, the machine
 bound to `model` is only trained on part of the data, as iteration
-proceeds.  See details on training below. Specify `final_train=true`
+proceeds.  See details on training below. Specify `retrain=true`
 to ensure the model is retrained on *all* available data, using the
 same number of iterations, once controlled iteration has stopped.
 
@@ -83,10 +83,10 @@ training loss, assuming this is made available by the model
 (`supports_training_losses(model) == true`). Otherwise, `resampling`
 must have type `Holdout` (eg, `Holdout(fraction_train=0.8, rng=123)`).
 
-Assuming `final_train=true` or `resampling=nothing`,
+Assuming `retrain=true` or `resampling=nothing`,
 `iterated_model` behaves exactly like the original `model` but with
 the iteration parameter automatically selected. If
-`final_train=false` (default) and `resampling` is not `nothing`, then
+`retrain=false` (default) and `resampling` is not `nothing`, then
 `iterated_model` behaves like the original model trained on a subset
 of the provided data.
 
@@ -125,7 +125,7 @@ performs the following actions:
 
 - Once a stop has been triggered, a clone of `model` is bound to all
   `data` in a machine called `mach_production` below, unless
-  `final_train == false` or `resampling === nothing`, in which case
+  `retrain == false` or `resampling === nothing`, in which case
   `mach_production` coincides with `train_mach`.
 
 
@@ -170,7 +170,7 @@ function IteratedModel(; model=nothing,
                        weights=nothing,
                        class_weights=nothing,
                        operation=predict,
-                       final_train=false,
+                       retrain=false,
                        check_measure=true,
                        iteration_parameter=nothing,
                        cache=true)
@@ -187,7 +187,7 @@ function IteratedModel(; model=nothing,
                                                     weights,
                                                     class_weights,
                                                     operation,
-                                                    final_train,
+                                                    retrain,
                                                     check_measure,
                                                     iteration_parameter,
                                                     cache)
@@ -199,7 +199,7 @@ function IteratedModel(; model=nothing,
                                                     weights,
                                                     class_weights,
                                                     operation,
-                                                    final_train,
+                                                    retrain,
                                                     check_measure,
                                                     iteration_parameter,
                                                     cache)

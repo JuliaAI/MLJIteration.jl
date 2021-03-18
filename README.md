@@ -20,7 +20,7 @@ Pkg.add("MLJIteration")
 ```
 
 ## Usage
- 
+
 ```julia
 using MLJ
 using MLJIteration
@@ -32,17 +32,18 @@ What follows is a draft of documentation to be added to the [MLJ
 manual](https://alan-turing-institute.github.io/MLJ.jl/dev/).
 
 ---
+# Controling Iterative Models
 
 Iterative supervised machine learning models are usually trained until
 an out-of-sample estimate of the performance satisfies some stopping
-criterion, such as `k` consecutive performance deteriorations (see
-[`Patience`](@ref) below). A more sophisticated kind of control might
-dynamically mutate parameters, such as a learning rate, in response to
-the behaviour of these estimates. Some iterative models will enable
-limited "under the hood" control through hyper-parameter choices (with
-the options and implementation for doing so varying from model to
-model), Sometimes it is completely up to the user is to provide
-control.
+criterion, such as `k` consecutive deteriorations of the performance
+(see [`Patience`](@ref) below). A more sophisticated kind of control
+might dynamically mutate parameters, such as a learning rate, in
+response to the behaviour of these estimates. Some iterative models
+will enable limited "under the hood" control through hyper-parameter
+choices (with the method and options for doing so varying from model
+to model). But often it is up to the user is to arrange control, which
+may amount to manually experimenting with the iteration parameter.
 
 In response to this ad hoc state of affairs, MLJ provides a uniform
 and feature-rich interface for controlling any iterative model that
@@ -50,10 +51,11 @@ exposes its iteration parameter as a hyper-parameter, and which
 implements the "warm restart" behaviour described in [Machines](@ref).
 
 As in [Tuning models](@ref), iteration control in MLJ is implemeted as
-a model wrapper. Ordinarily, the wrapped model behaves just like the
-original model, but with the training occuring on a subset of the
-provided data, and with the iteration parameter automatically
-determined by the controls specified in the wrapper.
+a model wrapper, which allows composition with other meta-algorithms.
+Ordinarily, the wrapped model behaves just like the original model,
+but with the training occuring on a subset of the provided data, and
+with the iteration parameter automatically determined by the controls
+specified in the wrapper.
 
 
 SIMPLE EXAMPLE
@@ -67,27 +69,27 @@ the data, according to the value of the `resampling` hyper-parameter
 of the wrapper.
 
 
-control                                              | description                                                                             | can trigger a stop 
+control                                              | description                                                                             | can trigger a stop
 -----------------------------------------------------|-----------------------------------------------------------------------------------------|--------------------
 [`Step`](@ref)`(n=1)`                                | Train model for `n` more iterations                                                     | no
 [`TimeLimit`](@ref)`(t=0.5)`                         | Stop after `t` hours                                                                    | yes
 [`NumberLimit`](@ref)`(n=100)`                       | Stop after `n` applications of the control                                              | yes
-[`NotANumber`](@ref)`()`                             | Stop when `NaN` encountered                                                             | yes 
+[`NotANumber`](@ref)`()`                             | Stop when `NaN` encountered                                                             | yes
 [`Threshold`](@ref)`(value=0.0)`                     | Stop when `loss < value`                                                                | yes
-[`GL`](@ref)`(alpha=2.0)`                            | ★ Stop after "GeneralizationLossDo" exceeds `alpha`                                      | yes 
+[`GL`](@ref)`(alpha=2.0)`                            | ★ Stop after "GeneralizationLossDo" exceeds `alpha`                                      | yes
 [`Patience`](@ref)`(n=5)`                            | ★ Stop after `n` consecutive loss increases                                              | yes
-[`PQ`](@ref)`(alpha=0.75, k=5)`                      | ★ Stop after "Progress-modified GL" exceeds `alpha`                                      | yes 
-[`Info`](@ref)`(f=identity)`                         | Log to `Info` the value of `f(mach)`, where `mach` is current machine                   | no 
+[`PQ`](@ref)`(alpha=0.75, k=5)`                      | ★ Stop after "Progress-modified GL" exceeds `alpha`                                      | yes
+[`Info`](@ref)`(f=identity)`                         | Log to `Info` the value of `f(mach)`, where `mach` is current machine                   | no
 [`Warn`](@ref)`(predicate; f="")`                    | Log to `Warn` the value of `f` or `f(mach)` if `predicate(mach)` holds                  | no
 [`Error`](@ref)`(predicate; f="")`                   | Log to `Error` the value of `f` or `f(mach)` if `predicate(mach)` holds and then stop   | yes
 [`Callback`](@ref)`(f=_->nothing)`                   | Call `f(mach)`                                                                          | yes
-`WithNumberDo`](@ref)`(f=n->@info(n))`               | Call `f(n + 1)` where `n` is number of previous calls                                   | yes 
+`WithNumberDo`](@ref)`(f=n->@info(n))`               | Call `f(n + 1)` where `n` is number of previous calls                                   | yes
 [`WithIterationsDo`](@ref)`(f=x->@info("loss: $x"))` | Call `f(i)`, where `i` is number of iterations                                          | yes
 [`WithLossDo`](@ref)`(f=x->@info(x))`                | Call `f(loss)` where `loss` is the current loss                                         | yes
 [`WithTrainingLossesDo`](@ref)`(f=v->@info(v))`      | Call `f(v)` where `v` is the current batch of training losses                           | yes
 [`Save`](@ref)`(filename="machine.jlso")`            | Save current machine to `machine1.jlso`, `machine2.jslo`, etc (or similar)              | yes
 
-> Table 1. Atomic controls. Some advanced options omitted. 
+> Table 1. Atomic controls. Some advanced options omitted.
 
 ★ For more these controls see [Prechelt, Lutz
  (1998)](https://link.springer.com/chapter/10.1007%2F3-540-49430-8_3):
@@ -133,4 +135,5 @@ Save
 ```@docs
 IteratedModel
 ```
+
 
