@@ -80,18 +80,18 @@ iterated_model = IteratedModel(model=EvoTreeClassifier(rng=123, η=0.005),
 mach = machine(iterated_model, X, y) |> fit!;
 ```
 
-The specified `controls` are repeatedly applied to a "training
-machine" constructed under the hood, sequence, until one of the
+The specified `controls` are repeatedly applied in sequence to a
+"training machine", constructed under the hood, until one of the
 controls triggers a stop. Here `Step(5)` means "Compute 5 more
-iterations" (starting from none); `Patience(2)` means "Stop at the end
-of the control cycle if there have been 2 consecutive drops in the log
-loss"; and `NumberLimit(100)` is a safeguard ensuring a stop after 100
-control cycles. A list of all controls appears in Table 1 under
-[Controls provided](@ref) below.
+iterations" (in this case starting from none); `Patience(2)` means
+"Stop at the end of the control cycle if there have been 2 consecutive
+drops in the log loss"; and `NumberLimit(100)` is a safeguard ensuring
+a stop after 100 control cycles (500 iterations). See [Controls
+provided](@ref) below for a complete list.
 
 Because iteration is implemented as a wrapper, the "self-iterating"
 model can be evaluated using cross-validation, say, and the number of
-iterations on each fold will generally be different.
+iterations on each fold will generally be different:
 
 ````julia
 e = evaluate!(mach, resampling=CV(nfolds=3), measure=log_loss, verbosity=0);
