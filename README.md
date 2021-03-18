@@ -20,7 +20,7 @@ Pkg.add("MLJIteration")
 ```
 
 ## Usage
-
+ 
 ```julia
 using MLJ
 using MLJIteration
