@@ -130,7 +130,7 @@ function IterationControl.update!(c::Save,
                                   verbosity,
                                   state=(filenumber=0, ))
     filenumber = state.filenumber + 1
-    root, suffix = splitext(cfilename)
+    root, suffix = splitext(c.filename)
     filename = string(root, filenumber, suffix)
     train_mach = IterationControl.expose(ic_model)
     verbosity > 0 && @info "Saving \"$filename\". "

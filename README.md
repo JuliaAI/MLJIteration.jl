@@ -34,18 +34,19 @@ manual](https://alan-turing-institute.github.io/MLJ.jl/dev/).
 ---
 
 Iterative supervised machine learning models are usually trained until
-some out-of-sample estimate of the performance satisfies some stopping
-criterion, such as `k` consecutive performance deteriorations. In more
-sophisticated applications, parameters, such as a learning rate, might
-be mutated during training, in response to the behaviour of these
-estimates. Some iterative models will enable limited control through
-hyper-parameter choices (with the options and implementation for doing
-so varying from model to model), Sometimes it is completely up to the
-user is to provide control. In response to this ad hoc state of
-affairs, MLJ provides a uniform and feature-rich interface for
-controlling any iterative model that exposes its iteration parameter
-as a hyper-parameter, and which implements the "warm restart"
-behaviour described in [Machines](@ref).
+an out-of-sample estimate of the performance satisfies some stopping
+criterion, such as `k` consecutive performance deteriorations (see
+[`Patience`](@ref) below). A more sophisticated kind of control might
+dynamically mutate parameters, such as a learning rate, in response to
+the behaviour of these estimates. Some iterative models will enable
+limited control through hyper-parameter choices (with the options and
+implementation for doing so varying from model to model), Sometimes it
+is completely up to the user is to provide control. 
+
+In response to this ad hoc state of affairs, MLJ provides a uniform
+and feature-rich interface for controlling any iterative model that
+exposes its iteration parameter as a hyper-parameter, and which
+implements the "warm restart" behaviour described in [Machines](@ref).
 
 As in [Tuning models](@ref), iteration control in MLJ is implemeted as
 a model wrapper. Ordinarily, the wrapped model behaves just like the
@@ -72,9 +73,9 @@ control                                              | description              
 [`NumberLimit`](@ref)`(n=100)`                       | Stop after `n` applications of the control                                              | yes
 [`NotANumber`](@ref)`()`                             | Stop when `NaN` encountered                                                             | yes 
 [`Threshold`](@ref)`(value=0.0)`                     | Stop when `loss < value`                                                                | yes
-[`GL`](@ref)`(alpha=2.0)`                            | ★Stop after "GeneralizationLossDo" exceeds `alpha`                                      | yes 
-[`Patience`](@ref)`(n=5)`                            | ★Stop after `n` consecutive loss increases                                              | yes
-[`PQ`](@ref)`(alpha=0.75, k=5)`                      | ★Stop after "Progress-modified GL" exceeds `alpha`                                      | yes 
+[`GL`](@ref)`(alpha=2.0)`                            | ★ Stop after "GeneralizationLossDo" exceeds `alpha`                                      | yes 
+[`Patience`](@ref)`(n=5)`                            | ★ Stop after `n` consecutive loss increases                                              | yes
+[`PQ`](@ref)`(alpha=0.75, k=5)`                      | ★ Stop after "Progress-modified GL" exceeds `alpha`                                      | yes 
 [`Info`](@ref)`(f=identity)`                         | Log to `Info` the value of `f(mach)`, where `mach` is current machine                   | no 
 [`Warn`](@ref)`(predicate; f="")`                    | Log to `Warn` the value of `f` or `f(mach)` if `predicate(mach)` holds                  | no
 [`Error`](@ref)`(predicate; f="")`                   | Log to `Error` the value of `f` or `f(mach)` if `predicate(mach)` holds and then stop   | yes
