@@ -57,6 +57,48 @@ but with the training occuring on a subset of the provided data, and
 with the iteration parameter automatically determined by the controls
 specified in the wrapper.
 
+By setting `retrain=true` one can ask that the wrapped model retrain
+on *all* supplied data, after learning the appropriate number of
+itertations from the controlled training phase:
+
+```@example gree
+using MLJ
+using MLJIteration
+
+X, y = make_moons(1000, rng=123)
+EvoTreeClassifier = @load EvoTreeClassifier verbosity=0
+
+iterated_model = IteratedModel(model=EvoTreeClassifier(rng=123, η=0.005),
+                               resampling=Holdout(rng=123),
+                               measures=log_loss,
+                               iteration_parameter=:nrounds,
+                               controls=[Step(5),
+                                         Patience(2),
+                                         NumberLimit(100)],
+                               retrain=true)
+
+mach = machine(iterated_model, X, y) |> fit!;
+```
+
+The specified `controls` are repeatedly applied to a "training
+machine" constructed under the hood, sequence, until one of the
+controls triggers a stop. Here `Step(5)` means "Compute 5 more
+iterations" (starting from none); `Patience(2)` means "Stop at the end
+of the control cycle if there have been 2 consecutive drops in the log
+loss"; and `NumberLimit(100)` is a safeguard ensuring a stop after 100
+control cycles. A list of all controls appears in Table 1 under
+[Controls provided](@ref) below.
+
+Because iteration is implemented as a wrapper, the "self-iterating"
+model can be evaluated using cross-validation, say, and the number of
+iterations on each fold will generally be different.
+
+````julia
+e = evaluate!(mach, resampling=CV(nfolds=3), measure=log_loss, verbosity=0);
+map(e.report_per_fold) do r
+    r.n_iterations
+end
+````
 
 SIMPLE EXAMPLE
 
@@ -135,5 +177,3 @@ Save
 ```@docs
 IteratedModel
 ```
-
-
