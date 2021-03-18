@@ -33,18 +33,19 @@ manual](https://alan-turing-institute.github.io/MLJ.jl/dev/).
 
 ---
 
-Iterative supervised machine learning models are usually train until
-some out-of-sample estimate of the performance satisfy some "early
-stopping in criterion". In more sophisticated applications,
-parameters, such as a learning rate, might be mutated during training,
-in response to the behaviour of these estimates. Some iterative models
-will enable limited control through hyper-parameter choices (with the
-options and implementation for doing so varying from model to model);
-sometimes it is completely up to the user is to provide control. MLJ,
-however, provides a uniform and feature-rich interface for controlling
-any iterative model that exposes its iteration parameter as a
-hyper-parameter, and which implements the "warm restart" behaviour
-described in [Machines](@ref).
+Iterative supervised machine learning models are usually trained until
+some out-of-sample estimate of the performance satisfies some stopping
+criterion, such as `k` consecutive performance deteriorations. In more
+sophisticated applications, parameters, such as a learning rate, might
+be mutated during training, in response to the behaviour of these
+estimates. Some iterative models will enable limited control through
+hyper-parameter choices (with the options and implementation for doing
+so varying from model to model), Sometimes it is completely up to the
+user is to provide control. In response to this ad hoc state of
+affairs, MLJ provides a uniform and feature-rich interface for
+controlling any iterative model that exposes its iteration parameter
+as a hyper-parameter, and which implements the "warm restart"
+behaviour described in [Machines](@ref).
 
 As in [Tuning models](@ref), iteration control in MLJ is implemeted as
 a model wrapper. Ordinarily, the wrapped model behaves just like the
@@ -57,7 +58,7 @@ SIMPLE EXAMPLE
 
 ## Controls provided
 
-In the table below `mach` is the machine being iterated, constructed
+In the table below, `mach` is the machine being iterated, constructed
 by binding the supplied data to the `model` specified in the
 `IteratedModel` wrapper, but trained in each iteration on a subset of
 the data, according to the value of the `resampling` hyper-parameter
@@ -71,9 +72,9 @@ control                                              | description              
 [`NumberLimit`](@ref)`(n=100)`                       | Stop after `n` applications of the control                                              | yes
 [`NotANumber`](@ref)`()`                             | Stop when `NaN` encountered                                                             | yes 
 [`Threshold`](@ref)`(value=0.0)`                     | Stop when `loss < value`                                                                | yes
-[`GL`](@ref)`(alpha=2.0)`                            | ⋆Stop after "GeneralizationLossDo" exceeds `alpha`                                      | yes 
-[`Patience`](@ref)`(n=5)`                            | ⋆Stop after `n` consecutive loss increases                                              | yes
-[`PQ`](@ref)`(alpha=0.75, k=5)`                      | ⋆Stop after "Progress-modified GL" exceeds `alpha`                                      | yes 
+[`GL`](@ref)`(alpha=2.0)`                            | ★Stop after "GeneralizationLossDo" exceeds `alpha`                                      | yes 
+[`Patience`](@ref)`(n=5)`                            | ★Stop after `n` consecutive loss increases                                              | yes
+[`PQ`](@ref)`(alpha=0.75, k=5)`                      | ★Stop after "Progress-modified GL" exceeds `alpha`                                      | yes 
 [`Info`](@ref)`(f=identity)`                         | Log to `Info` the value of `f(mach)`, where `mach` is current machine                   | no 
 [`Warn`](@ref)`(predicate; f="")`                    | Log to `Warn` the value of `f` or `f(mach)` if `predicate(mach)` holds                  | no
 [`Error`](@ref)`(predicate; f="")`                   | Log to `Error` the value of `f` or `f(mach)` if `predicate(mach)` holds and then stop   | yes
@@ -86,7 +87,7 @@ control                                              | description              
 
 > Table 1. Atomic controls. Some advanced options omitted. 
 
-⋆ For more these controls see [Prechelt, Lutz
+★ For more these controls see [Prechelt, Lutz
  (1998)](https://link.springer.com/chapter/10.1007%2F3-540-49430-8_3):
  "Early Stopping - But When?", in *Neural Networks: Tricks of the
  Trade*, ed. G. Orr, Springer.
