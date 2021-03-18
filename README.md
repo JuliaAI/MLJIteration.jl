@@ -39,9 +39,10 @@ criterion, such as `k` consecutive performance deteriorations (see
 [`Patience`](@ref) below). A more sophisticated kind of control might
 dynamically mutate parameters, such as a learning rate, in response to
 the behaviour of these estimates. Some iterative models will enable
-limited control through hyper-parameter choices (with the options and
-implementation for doing so varying from model to model), Sometimes it
-is completely up to the user is to provide control. 
+limited "under the hood" control through hyper-parameter choices (with
+the options and implementation for doing so varying from model to
+model), Sometimes it is completely up to the user is to provide
+control.
 
 In response to this ad hoc state of affairs, MLJ provides a uniform
 and feature-rich interface for controlling any iterative model that
