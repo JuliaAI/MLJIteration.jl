@@ -47,7 +47,7 @@ const ERR_NEED_PARAMETER =
 
 """
     IteratedModel(model=nothing,
-                  controls=[Step(10), Patience(5), NumberLimit(50), NotANumber()],
+                  controls=$CONTROLS_DEFAULT,
                   final_train=false,
                   resampling=Holdout(),
                   measure=nothing,
@@ -63,7 +63,13 @@ const ERR_NEED_PARAMETER =
 Wrap the specified `model <: Supervised` in the specified iteration
 `controls`. Training a machine bound to the wrapper iterates a
 corresonding machine bound to `model`. Here `model` should support
-iteration. Controls are discussed further below.
+iteration.
+
+To list all controls, do `MLJIteration.CONTROLS`. Controls are
+summarized at
+[https://alan-turing-institute.github.io/MLJ.jl/dev/getting_started/](https://alan-turing-institute.github.io/MLJ.jl/dev/controlling_iterative_models/)
+but query individual doc-strings for details and advanced options. For
+creating your own controls, refer to the documentation just cited.
 
 To make out-of-sample losses available to the controls, the machine
 bound to `model` is only trained on part of the data, as iteration
@@ -75,7 +81,7 @@ Specify `resampling=nothing` if all data is to be used for controlled
 iteration, with each out-of-sample loss replaced by the most recent
 training loss, assuming this is made available by the model
 (`supports_training_losses(model) == true`). Otherwise, `resampling`
-must have type `Holdout`.
+must have type `Holdout` (eg, `Holdout(fraction_train=0.8, rng=123)`).
 
 Assuming `final_train=true` or `resampling=nothing`,
 `iterated_model` behaves exactly like the original `model` but with
@@ -132,38 +138,15 @@ Xnew)`. Similar similar statements hold for `predict_mean`,
 
 ### Controls
 
-Every set of controls should include a `Step(...)`, usually the first control.
-
-For a summary of all available controls, see
-[https://github.com/ablaom/IterationControl.jl#controls-provided](https://github.com/ablaom/IterationControl.jl#controls-provided). Basic
-controls for getting started are summarized below. Query the
-doc-strings for details and advanced options.
-
-control                          | description
----------------------------------|----------------------------------
-`Step(n=1)`                      | Train model for `n` iterations
-`Info(f=identity)`               | Log to `Info` the value of `f(train_mach)`
-`Callback(f=_->nothing)`         | Call `f(train_mach)`
-`TimeLimit(t=0.5)`               | Stop after `t` hours
-`NumberLimit(n=100)`             | Stop after `n` control cycles
-`WithLossDo(f=x->@info(x))`      | Call `f(loss)` where `loss` is current loss
-`NotANumber()`                   | Stop when `NaN` encountered
-`Threshold(value=0.0)`           | Stop when `loss < value`
-`Patience(n=5)`                  | Stop after `n` consecutive loss increases
-`Save(filename="machine.jlso")`  | Save `train_mach` machine to file
-`MLJIteration.skip(control, p=1)`| Apply `control` but only every `p` cycles.
-
 A control is permitted to mutate the fields (hyper-parameters) of
 `train_mach.model` (the clone of `model`). For example, to mutate a
 learning rate one might use the control
 
-    Callback(m -> m.model.eta = 1.05*m.model.eta)
+    Callback(mach -> mach.model.eta = 1.05*mach.model.eta)
 
 However, unless `model` supports warm restarts with respect to changes
 in that parameter, this will trigger retraining of `train_mach` from
 scratch, with a different training outcome, which is not recommended.
-
-See the MLJ documentation for user-defined controls.
 
 
 ### Warm restarts
