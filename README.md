@@ -196,8 +196,8 @@ value of the iteration parameter, `wrapper.n_iterations` used
 here. See more under [The training machine wrapper](@ref) below.
 
 ```julia
-struct
-    IterateFromList list::Vector{<:Int} # list of iteration parameter values
+struct IterateFromList 
+    list::Vector{<:Int} # list of iteration parameter values
     IterateFromList(v) = new(unique(sort(v)))
 end
 
