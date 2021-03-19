@@ -3,6 +3,7 @@ module MLJIteration
 using MLJBase
 using IterationControl
 import IterationControl: debug, skip, composite
+import IterationControl: update!, done, takedown, train!
 
 export IteratedModel
 
