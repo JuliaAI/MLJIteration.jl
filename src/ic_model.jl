@@ -49,7 +49,7 @@ function IterationControl.train!(m::ICModel, n::Int)
     # update the iteration parameter in the mlj model:
     rset!(model, m.iteration_parameter, m.i[])
 
-    fit!(m.mach, verbosity=m.verbosity - 1)
+    fit!(m.mach, verbosity=m.verbosity - 2)
     m.Δi[] = n
 end
 
