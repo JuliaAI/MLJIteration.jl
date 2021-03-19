@@ -183,7 +183,7 @@ Save
 
 ## Custom controls
 
-### Example 1 - Iterating from a list of iteration parameter values
+### Example 1 - Non-uniform iteration steps
 
 Below we define a control, `IterateFromList(list)`, to train, on the
 each application of the control, until the iteration count reaches
@@ -191,8 +191,9 @@ the next value on a user-specified list, triggering a stop when the
 list is exhausted.
 
 In the code, `wrapper` is an object that wraps the training machine
-(see above). See more under [The training machine wrapper](@ref)
-below.
+(see above) but also contains other information, such as the current
+value of the iteration parameter, `wrapper.n_iterations` used
+here. See more under [The training machine wrapper](@ref) below.
 
 ```julia
 struct
@@ -203,7 +204,7 @@ end
 function MLJIteration.update!(control::IterateFromList, wrapper, verbosity)
     Δi = control.list[1]
     verbosity > 1 && @info "Training $Δi more iterations. "
-    MLJIteration.train!(wrapper, Δi)
+    MLJIteration.train!(wrapper, Δi) # trains the training machine
     return (index = 2, )
 end
 
