@@ -191,10 +191,8 @@ the next value on a user-specified list, triggering a stop when the
 list is exhausted.
 
 In the code, `wrapper` is an object that wraps the training machine
-(see above), which is accessed by `wrapper.machine`, but which also
-contains other information, such as the current performance
-evaluation object, `wrapper.evaluation`, used here. See more under
-[`The training machine wrapper`](@ref) below.
+(see above). See more under [The training machine wrapper](@ref)
+below.
 
 ```julia
 struct
@@ -202,37 +200,37 @@ struct
     IterateFromList(v) = new(unique(sort(v)))
 end
 
-function MLJIteration.update!(control::IterateFromList, m, verbosity)
+function MLJIteration.update!(control::IterateFromList, wrapper, verbosity)
     Δi = control.list[1]
     verbosity > 1 && @info "Training $Δi more iterations. "
-    MLJIteration.train!(m, Δi)
+    MLJIteration.train!(wrapper, Δi)
     return (index = 2, )
 end
 
-function MLJIteration.update!(control::IterateFromList, m, verbosity, state)
+function MLJIteration.update!(control::IterateFromList, wrapper, verbosity, state)
     index = state.positioin_in_list
-    Δi = control.list[i] - m.n_iterations
+    Δi = control.list[i] - wrapper.n_iterations
     verbosity > 1 && @info "Training $Δi more iterations. "
-    MLJIteration.train!(m, Δi)
+    MLJIteration.train!(wrapper, Δi)
     return (index = index + 1, )
 end
 ```
 
 The first `update` method will be called the first time the control is
-applied, returning an initialized "state", which is passed to the
+applied, returning an initialized `state`, which is passed to the
 second `update` method, which is called on subsequent control
-applications (and which returns an updated "state"). In this example
+applications (and which returns an updated `state`). In this example
 the two definitions can actually be combined into the one:
 
 ```julia
 function MLJIteration.update!(control::IterateFromList,
-                              m,
+                              wrapper,
                               verbosity,
                               state=(index = 1, ))
     index = state.index
-    Δi = control.list[index] - m.n_iterations
+    Δi = control.list[index] - wrapper.n_iterations
     verbosity > 1 && @info "Training $Δi more iterations. "
-    MLJIteration.train!(m, Δi)
+    MLJIteration.train!(wrapper, Δi)
     return (index = index + 1, )
 end
 ```
