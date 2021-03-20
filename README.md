@@ -108,7 +108,11 @@ end
 ```
 
 Alternatively, one might wrap the self-iterating model in a tuning
-strategy, using `TunedModel`; see [Tuning Models](@ref).
+strategy, using `TunedModel`; see [Tuning Models](@ref). In this way,
+the optimization of some other hyper-parameter is realized
+simultaneously with that of the iteration parameter, which will
+frequently be more efficient than a direct two-parameter search, if
+iteration is playing a regularization role.
 
 
 ## Controls provided
