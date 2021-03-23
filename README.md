@@ -100,7 +100,7 @@ Because iteration is implemented as a wrapper, the "self-iterating"
 model can be evaluated using cross-validation, say, and the number of
 iterations on each fold will generally be different:
 
-```julia
+```@example gree
 e = evaluate!(mach, resampling=CV(nfolds=3), measure=log_loss, verbosity=0);
 map(e.report_per_fold) do r
     r.n_iterations
@@ -129,7 +129,11 @@ Some iterative models report a training loss, as a biproduct of a
 
 To have `IteratedModel` bind all data to the training machine and use
 training losses in place of an out-of-sample loss, simply specify
-`resampling=nothing`.
+`resampling=nothing`. To check if `MyFavoriteIterativeModel` reports
+training losses, load the model code and inspect
+`supports_training_losses(MyFavoriteIterativeModel)` (or do
+`info("MyFavoriteIterativeModel")`)
+
 
 ### Model tuning
 
@@ -153,7 +157,7 @@ of the regressor as an `IteratedModel`, with `resampling=nothing` and
 the number of `lambda` values tested since the previous best
 cross-validation loss reaches 20.
 
-```julia
+```@example gree
 using MLJ
 using MLJIteration
 
@@ -172,6 +176,13 @@ iterated_model = IteratedModel(model=self_tuning_model,
 mach = machine(iterated_model, X, y);
 fit!(mach);
 report(mach).model_report.best_model
+```
+
+We can use `mach` here to directly obtain predictions using the
+optimal model, as in
+
+```@example gree
+predict(mach, selectrows(X, 1:4))
 ```
 
 ## Controls provided
