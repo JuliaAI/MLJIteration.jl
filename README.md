@@ -77,7 +77,6 @@ EvoTreeClassifier = @load EvoTreeClassifier verbosity=0
 iterated_model = IteratedModel(model=EvoTreeClassifier(rng=123, η=0.005),
                                resampling=Holdout(rng=123),
                                measures=log_loss,
-                               iteration_parameter=:nrounds,
                                controls=[Step(5),
                                          Patience(2),
                                          NumberLimit(100)],
@@ -143,19 +142,18 @@ wrapper is implemented as an iterative model. Moreover, this wrapper
 reports, as a training loss, the lowest value of the optimization
 objective function so far (typically the lowest value of an
 out-of-sample loss, or -1 times an out-of-sample score). One may want
-to simply end the hyper-parameter search when this value fails to
-improve after `k` more iterations (using the [`NumberSinceBest`](@ref)
-stopping criterion below) rather than introduce an extra layer of
-resampling to first "learn" the optimal value of the iteration
-parameter.
+to simply end the hyper-parameter search when this value meets the
+[`NumberSinceBest`](@ref) stopping criterion discussed below, say,
+rather than introduce an extra layer of resampling to first "learn"
+the optimal value of the iteration parameter.
 
-In the following example we conduct a `RandomSearch` for the optimal
-value of the regularizaion parameter `lambda` in a `RidgeRegressor`
-using 6-fold cross-validation. By wrapping our "self-tuning" version
-of the regressor as an `IteratedModel`, with `resampling=nothing` and
-`NumberSinceBest(20)` in the controls, we terminate the search when
-the number of `lambda` values tested since the previous best
-cross-validation loss reaches 20.
+In the following example we conduct a [`RandomSearch`](@ref) for the
+optimal value of the regularizaion parameter `lambda` in a
+`RidgeRegressor` using 6-fold cross-validation. By wrapping our
+"self-tuning" version of the regressor as an [`IteratedModel`](@ref),
+with `resampling=nothing` and `NumberSinceBest(20)` in the controls,
+we terminate the search when the number of `lambda` values tested
+since the previous best cross-validation loss reaches 20.
 
 ```@example gree
 using MLJ
@@ -199,7 +197,7 @@ control                                              | description              
 [`Step`](@ref)`(n=1)`                                | Train model for `n` more iterations                                                     | no
 [`TimeLimit`](@ref)`(t=0.5)`                         | Stop after `t` hours                                                                    | yes
 [`NumberLimit`](@ref)`(n=100)`                       | Stop after `n` applications of the control                                              | yes
-[`NumberSinceBest`]`(n=6)`                           | Stop when best loss occurred `n` control applications ago                               | yes
+[`NumberSinceBest`](@ref)`(n=6)`                           | Stop when best loss occurred `n` control applications ago                               | yes
 [`NotANumber`](@ref)`()`                             | Stop when `NaN` encountered                                                             | yes
 [`Threshold`](@ref)`(value=0.0)`                     | Stop when `loss < value`                                                                | yes
 [`GL`](@ref)`(alpha=2.0)`                            | ★ Stop after "GeneralizationLossDo" exceeds `alpha`                                     | yes
@@ -259,17 +257,36 @@ Save
 
 ## Custom controls
 
+Control in MLJIteration is implemented using
+[IterationControl.jl](https://github.com/ablaom/IterationControl.jl). Rather
+than iterating a training machine directly, we iterate a wrapped
+version of this object, which includes other information that controls may
+want to access, such the MLJ evaluation object. This information is
+summarized under [The training machine wrapper](@ref) below.
+
+Controls must implement two `update!` methods, one for initializing
+the control's *state* on the first application of the control (this
+state being external to the control `struct`) and one for all
+subsequent control applications, which generally updates state
+also. There are two optional methods: `done`, for specifying
+conditions triggering a stop, and `takedown` for specifying actions to
+perform at the end of all training.
+
+We summarize the training algorithm, as it relates to controls, after
+giving a simple example.
+
+
 ### Example 1 - Non-uniform iteration steps
 
-Below we define a control, `IterateFromList(list)`, to train, on the
-each application of the control, until the iteration count reaches
-the next value on a user-specified list, triggering a stop when the
-list is exhausted.
+Below we define  a control, `IterateFromList(list)`, to  train, on the
+each application of the control, until the iteration count reaches the
+next value on  a user-specified list, triggering a stop  when the list
+is    exhausted.     So,    for    example,    we     might    specify
+`IterateFromList(2:2:100)`, which  would amount to specifying  the two
+existing controls `Step(2)` and `NumberLimit(100)`.
 
 In the code, `wrapper` is an object that wraps the training machine
-(see above) but also contains other information, such as the current
-value of the iteration parameter, `wrapper.n_iterations` used
-here. See more under [The training machine wrapper](@ref) below.
+(see above).
 
 ```julia
 struct IterateFromList
@@ -294,75 +311,83 @@ end
 ```
 
 The first `update` method will be called the first time the control is
-applied, returning an initialized `state`, which is passed to the
-second `update` method, which is called on subsequent control
-applications (and which returns an updated `state`). In this example
-the two definitions can actually be combined into the one:
+applied, returning an initialized `state = (index = 2,)`, which is
+passed to the second `update` method, which is called on subsequent
+control applications (and which returns the updated `state`).
 
-```julia
-function MLJIteration.update!(control::IterateFromList,
-                              wrapper,
-                              verbosity,
-                              state=(index = 1, ))
-    index = state.index
-    Δi = control.list[index] - wrapper.n_iterations
-    verbosity > 1 && @info "Training $Δi more iterations. "
-    MLJIteration.train!(wrapper, Δi)
-    return (index = index + 1, )
-end
-```
-
-We also need to implement a `done` method to say when the control is
-to trigger a stop:
+A `done` method articulates the criterion for stopping:
 
 ```julia
 MLJIteration.done(control::IterateFromList, state) =
     state.index > length(control.list)
 ```
 
-### Example 2 - Basing a stop on multiple measures
-
-When one specifies a vector `measures=...` in the `IteratedModel`
-constructor, only the *first* measure is used to define the "loss"
-used by stopping controls provided by MLJIteration.jl. The following
-example defines a new control to trigger a stop only when *all* of the
-measures satisfy the [`NumberSinceBest`](@ref) criterion.
-
-For simplicity we are assuming all the measures have the `:loss`
-orientation (lower is better).
+For the sake of illustration, we'll implement a `takedown` method; its
+return value is included in the `IteratedModel` report:
 
 ```julia
-struct MultiSinceBest
-    n::Integer
-end
-
-function MLJIteration.update(control::MultiSinceBest, wrapper, verbosity)
-    e = wrapper.evaluation  # current evaluation object
-    measures = e.measure
-    best_losses = e.measurement
-    numbers_since_best = zeros(Int, length(measures))
-    return (measures = measures,
-            best_losses = best_losses,
-            numbers_since_best = numbers_since_best)
-end
-
-function MLJIteration.update(control::MultiSinceBest, wrapper, verbosity, state)
-    measures, best_losses, numbers_since_best = state
-    e = wrapper.evaluation  # current evaluation object
-    losses = e.measurement
-    for k in eachindex(measures)
-        if losses[k] < best_losses[k]
-            best_losses[k] = losses[k]
-            number_since_best[k] = 0
-        else
-            numbers_since_best[k] += 1
-        end
-    end
-    return (measures = measures,
-            best_losses = best_losses,
-            numbers_since_best = numbers_since_best)
+MLJIteration.takedown(control::IterateFromList, verbosity, state) 
+    verbosity > 1 && = @info "Stepped through these values of the "*
+                              "iteration parameter: $(control.list)"
+    return (iteration_values=control.list, )
 end
 ```
+
+
+### The training algorithm
+
+Here now is a simplified description of the training of an
+`IteratedModel`. First, the atomic `model` is bound to a subset of the
+supplied data and wrapped in an object called `wrapper` below. To
+train the wrapped machine for `i` more iterations, and update the
+other data in the wrapper, requires the call
+`MLJIteration.train!(wrapper, i)`. Only controls make this call (e.g.,
+`Step(...)`, or `IterateFromList` above). If we assume for simplicity
+there is only a single control, called `control`, then training
+proceeds as follows:
+
+```julia
+state = update!(control, wrapper, verbosity)
+finished = done(control, state)
+
+# subsequent training events:
+while !finished
+    state = update!(control, wrapper, verbosity, state)
+    finished = done(control, state)
+end
+
+# finalization:
+return takedown(control, verbosity, state)
+```
+
+### The training machine wrapper
+
+A training machine `wrapper` has these properties:
+
+- `wrapper.machine` - the training machine, type `Machine`
+
+- `wrapper.model`   - the mutable atomic model, coinciding with `wrapper.machine.model`
+
+- `wrapper.n_cycles` - the number `IterationControl.train!(wrapper, _)` calls
+  so far; generally the current control cycle count
+  
+- `wrapper.n_iterations` - the total number of iterations applied to the model so far
+
+- `wrapper.Δiterations` - the number of iterations applied in the last
+  `IterationControl.train!(wrapper, _)` call
+  
+- `wrapper.loss` - the out-of-sample loss (based on the first measure in `measures`)
+
+- `wrapper.training_losses` - the last bactch of training losses (if
+  reported by `model`), an abstract vector of length
+  `wrapper.Δiteration`.
+  
+- `wrapper.evalution` - the complete MLJ performance evaluation
+  object, which has the following properties: `measure`,
+  `measurement`, `per_fold`, `per_observation`,
+  `fitted_params_per_fold`, `report_per_fold` (here there is only one
+  fold). For further details, see [Evaluating Model Performance](@ref).
+
 
 ### Example 3 - Cyclic learning rates
 
