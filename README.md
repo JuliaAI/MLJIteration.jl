@@ -113,6 +113,59 @@ simultaneously with that of the iteration parameter, which will
 frequently be more efficient than a direct two-parameter search.
 
 
+## Controls provided
+
+In the table below, `mach` is the *training machine* being iterated,
+constructed by binding the supplied data to the `model` specified in
+the `IteratedModel` wrapper, but trained in each iteration on a subset
+of the data, according to the value of the `resampling`
+hyper-parameter of the wrapper.
+
+
+control                                              | description                                                                             | can trigger a stop
+-----------------------------------------------------|-----------------------------------------------------------------------------------------|--------------------
+[`Step`](@ref)`(n=1)`                                | Train model for `n` more iterations                                                     | no
+[`TimeLimit`](@ref)`(t=0.5)`                         | Stop after `t` hours                                                                    | yes
+[`NumberLimit`](@ref)`(n=100)`                       | Stop after `n` applications of the control                                              | yes
+[`NumberSinceBest`](@ref)`(n=6)`                           | Stop when best loss occurred `n` control applications ago                               | yes
+[`NotANumber`](@ref)`()`                             | Stop when `NaN` encountered                                                             | yes
+[`Threshold`](@ref)`(value=0.0)`                     | Stop when `loss < value`                                                                | yes
+[`GL`](@ref)`(alpha=2.0)`                            | ★ Stop after "GeneralizationLossDo" exceeds `alpha`                                     | yes
+[`Patience`](@ref)`(n=5)`                            | ★ Stop after `n` consecutive loss increases                                             | yes
+[`PQ`](@ref)`(alpha=0.75, k=5)`                      | ★ Stop after "Progress-modified GL" exceeds `alpha`                                     | yes
+[`Info`](@ref)`(f=identity)`                         | Log to `Info` the value of `f(mach)`, where `mach` is current machine                   | no
+[`Warn`](@ref)`(predicate; f="")`                    | Log to `Warn` the value of `f` or `f(mach)` if `predicate(mach)` holds                  | no
+[`Error`](@ref)`(predicate; f="")`                   | Log to `Error` the value of `f` or `f(mach)` if `predicate(mach)` holds and then stop   | yes
+[`Callback`](@ref)`(f=_->nothing)`                   | Call `f(mach)`                                                                          | yes
+[`WithNumberDo`](@ref)`(f=n->@info(n))`              | Call `f(n + 1)` where `n` is number of previous calls                                   | yes
+[`WithIterationsDo`](@ref)`(f=x->@info("loss: $x"))` | Call `f(i)`, where `i` is total number of iterations                                    | yes
+[`WithLossDo`](@ref)`(f=x->@info(x))`                | Call `f(loss)` where `loss` is the current loss                                         | yes
+[`WithTrainingLossesDo`](@ref)`(f=v->@info(v))`      | Call `f(v)` where `v` is the current batch of training losses                           | yes
+[`Save`](@ref)`(filename="machine.jlso")`            | Save current machine to `machine1.jlso`, `machine2.jslo`, etc                           | yes
+
+> Table 1. Atomic controls. Some advanced options omitted.
+
+★ For more these controls see [Prechelt, Lutz
+ (1998)](https://link.springer.com/chapter/10.1007%2F3-540-49430-8_3):
+ "Early Stopping - But When?", in *Neural Networks: Tricks of the
+ Trade*, ed. G. Orr, Springer.
+
+**Stopping option.** All the following controls trigger a stop if the
+provided function `f` returns `true` and `stop_if_true=true` is
+specified in the constructor: `Callback`, `WithNumberDo`,
+`WithLossDo`, `WithTrainingLossesDo`.
+
+There are also three control wrappers to modify a control's behavior:
+
+wrapper                                            | description
+---------------------------------------------------|-------------------------------------------------------------------------
+`IterationControl.skip(control, predicate=1)`      | Apply `control` every `predicate` applications of the control wrapper (can also be a function; see doc-string)
+`IterationControl.debug(control)`                  | Apply `control` but also log its state to `Info` (irrespective of `verbosity` level)
+`IterationControl.composite(controls...)`          | Apply each `control` in `controls` in sequence; mostly for under-the-hood use
+
+> Table 2. Wrapped controls
+
+
 ## Using training losses, and controlling model tuning
 
 Some iterative models report a training loss, as a biproduct of a
@@ -183,78 +236,6 @@ optimal model, as in
 predict(mach, selectrows(X, 1:4))
 ```
 
-## Controls provided
-
-In the table below, `mach` is the *training machine* being iterated,
-constructed by binding the supplied data to the `model` specified in
-the `IteratedModel` wrapper, but trained in each iteration on a subset
-of the data, according to the value of the `resampling`
-hyper-parameter of the wrapper.
-
-
-control                                              | description                                                                             | can trigger a stop
------------------------------------------------------|-----------------------------------------------------------------------------------------|--------------------
-[`Step`](@ref)`(n=1)`                                | Train model for `n` more iterations                                                     | no
-[`TimeLimit`](@ref)`(t=0.5)`                         | Stop after `t` hours                                                                    | yes
-[`NumberLimit`](@ref)`(n=100)`                       | Stop after `n` applications of the control                                              | yes
-[`NumberSinceBest`](@ref)`(n=6)`                           | Stop when best loss occurred `n` control applications ago                               | yes
-[`NotANumber`](@ref)`()`                             | Stop when `NaN` encountered                                                             | yes
-[`Threshold`](@ref)`(value=0.0)`                     | Stop when `loss < value`                                                                | yes
-[`GL`](@ref)`(alpha=2.0)`                            | ★ Stop after "GeneralizationLossDo" exceeds `alpha`                                     | yes
-[`Patience`](@ref)`(n=5)`                            | ★ Stop after `n` consecutive loss increases                                             | yes
-[`PQ`](@ref)`(alpha=0.75, k=5)`                      | ★ Stop after "Progress-modified GL" exceeds `alpha`                                     | yes
-[`Info`](@ref)`(f=identity)`                         | Log to `Info` the value of `f(mach)`, where `mach` is current machine                   | no
-[`Warn`](@ref)`(predicate; f="")`                    | Log to `Warn` the value of `f` or `f(mach)` if `predicate(mach)` holds                  | no
-[`Error`](@ref)`(predicate; f="")`                   | Log to `Error` the value of `f` or `f(mach)` if `predicate(mach)` holds and then stop   | yes
-[`Callback`](@ref)`(f=_->nothing)`                   | Call `f(mach)`                                                                          | yes
-[`WithNumberDo`](@ref)`(f=n->@info(n))`              | Call `f(n + 1)` where `n` is number of previous calls                                   | yes
-[`WithIterationsDo`](@ref)`(f=x->@info("loss: $x"))` | Call `f(i)`, where `i` is total number of iterations                                    | yes
-[`WithLossDo`](@ref)`(f=x->@info(x))`                | Call `f(loss)` where `loss` is the current loss                                         | yes
-[`WithTrainingLossesDo`](@ref)`(f=v->@info(v))`      | Call `f(v)` where `v` is the current batch of training losses                           | yes
-[`Save`](@ref)`(filename="machine.jlso")`            | Save current machine to `machine1.jlso`, `machine2.jslo`, etc                           | yes
-
-> Table 1. Atomic controls. Some advanced options omitted.
-
-★ For more these controls see [Prechelt, Lutz
- (1998)](https://link.springer.com/chapter/10.1007%2F3-540-49430-8_3):
- "Early Stopping - But When?", in *Neural Networks: Tricks of the
- Trade*, ed. G. Orr, Springer.
-
-**Stopping option.** All the following controls trigger a stop if the
-provided function `f` returns `true` and `stop_if_true=true` is
-specified in the constructor: `Callback`, `WithNumberDo`,
-`WithLossDo`, `WithTrainingLossesDo`.
-
-There are also three control wrappers to modify a control's behavior:
-
-wrapper                                            | description
----------------------------------------------------|-------------------------------------------------------------------------
-`IterationControl.skip(control, predicate=1)`      | Apply `control` every `predicate` applications of the control wrapper (can also be a function; see doc-string)
-`IterationControl.debug(control)`                  | Apply `control` but also log its state to `Info` (irrespective of `verbosity` level)
-`IterationControl.composite(controls...)`          | Apply each `control` in `controls` in sequence; mostly for under-the-hood use
-
-> Table 2. Wrapped controls
-
-```@docs
-Step
-TimeLimit
-NumberLimit
-NumberSinceBest
-NotANumber
-Threshold
-GL
-PQ
-Info
-Warn
-Error
-Callback
-WithNumberDo
-WithIterationsDo
-WithLossDo
-WIthTrainingLossesDo
-Save
-```
-
 ## Custom controls
 
 Control in MLJIteration is implemented using
@@ -278,12 +259,12 @@ giving a simple example.
 
 ### Example 1 - Non-uniform iteration steps
 
-Below we define  a control, `IterateFromList(list)`, to  train, on the
-each application of the control, until the iteration count reaches the
-next value on  a user-specified list, triggering a stop  when the list
-is    exhausted.     So,    for    example,    we     might    specify
-`IterateFromList(2:2:100)`, which  would amount to specifying  the two
-existing controls `Step(2)` and `NumberLimit(100)`.
+Below we define a control, `IterateFromList(list)`, to train, on each
+application of the control, until the iteration count reaches the next
+value in a user-specified list, triggering a stop when the list is
+exhausted. For example, to train on iteration counts on a log scale,
+one might use `IterateFromList([round(Int, 10^x) for x in range(1, 2,
+length=10)]`.
 
 In the code, `wrapper` is an object that wraps the training machine
 (see above).
@@ -334,32 +315,6 @@ end
 ```
 
 
-### The training algorithm
-
-Here now is a simplified description of the training of an
-`IteratedModel`. First, the atomic `model` is bound to a subset of the
-supplied data and wrapped in an object called `wrapper` below. To
-train the wrapped machine for `i` more iterations, and update the
-other data in the wrapper, requires the call
-`MLJIteration.train!(wrapper, i)`. Only controls make this call (e.g.,
-`Step(...)`, or `IterateFromList` above). If we assume for simplicity
-there is only a single control, called `control`, then training
-proceeds as follows:
-
-```julia
-state = update!(control, wrapper, verbosity)
-finished = done(control, state)
-
-# subsequent training events:
-while !finished
-    state = update!(control, wrapper, verbosity, state)
-    finished = done(control, state)
-end
-
-# finalization:
-return takedown(control, verbosity, state)
-```
-
 ### The training machine wrapper
 
 A training machine `wrapper` has these properties:
@@ -389,7 +344,34 @@ A training machine `wrapper` has these properties:
   fold). For further details, see [Evaluating Model Performance](@ref).
 
 
-### Example 3 - Cyclic learning rates
+### The training algorithm
+
+Here now is a simplified description of the training of an
+`IteratedModel`. First, the atomic `model` is bound to a subset of the
+supplied data and wrapped in an object called `wrapper` below. To
+train the wrapped machine for `i` more iterations, and update the
+other data in the wrapper, requires the call
+`MLJIteration.train!(wrapper, i)`. Only controls make this call (e.g.,
+`Step(...)`, or `IterateFromList` above). If we assume for simplicity
+there is only a single control, called `control`, then training
+proceeds as follows:
+
+```julia
+state = update!(control, wrapper, verbosity)
+finished = done(control, state)
+
+# subsequent training events:
+while !finished
+    state = update!(control, wrapper, verbosity, state)
+    finished = done(control, state)
+end
+
+# finalization:
+return takedown(control, verbosity, state)
+```
+
+
+### Example 2 - Cyclic learning rates
 
 
 ```julia
@@ -404,14 +386,31 @@ end
 ```
 
 
-
-
-
-
-
-
 ## API
 
 ```@docs
 IteratedModel
 ```
+
+### Controls
+
+```@docs
+Step
+TimeLimit
+NumberLimit
+NumberSinceBest
+NotANumber
+Threshold
+GL
+PQ
+Info
+Warn
+Error
+Callback
+WithNumberDo
+WithIterationsDo
+WithLossDo
+WIthTrainingLossesDo
+Save
+```
+
