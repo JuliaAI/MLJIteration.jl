@@ -6,7 +6,7 @@ const ERR_TRAINING_LOSSES =
     ArgumentError("Attempt to inspect training losses for "*
                   "a model that doesn't report them. ")
 const ERR_EVALUATION =
-    ArgumentError("`WithEvaluationDo` unsupported if `resampling=nothing`. ")
+    ArgumentError("There are no evaluation objects if `resampling=nothing`. ")
 
 
 mlj_model(mach::Machine) = mach.model
