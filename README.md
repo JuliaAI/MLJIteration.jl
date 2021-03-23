@@ -114,16 +114,16 @@ simultaneously with that of the iteration parameter, which will
 frequently be more efficient than a direct two-parameter search.
 
 
-## Use of training losses, and controlling hyper-parameter optimization
+## Using training losses, and controlling model tuning
 
 Some iterative models report a training loss, as a biproduct of a
 `fit!` call, and these can be used in two ways:
 
 1. To supplement an out-of-sample estimate of the loss in deciding
  when to stop, as in the `PQ` stopping criterion (see [Prechelt, Lutz
- (1998)](https://link.springer.com/chapter/10.1007%2F3-540-49430-8_3));
+ (1998)](https://link.springer.com/chapter/10.1007%2F3-540-49430-8_3)));
  or
- 
+
 2. As a (generally less reliable) substitute for an out-of-sample
   loss, when wishing to train on all data supplied data.
 
@@ -131,17 +131,48 @@ To have `IteratedModel` bind all data to the training machine and use
 training losses in place of an out-of-sample loss, simply specify
 `resampling=nothing`.
 
+### Model tuning
+
 An example of scenario 2 occurs when controlling hyper-parameter
 optimization (model tuning). Recall that MLJ's [`TunedModel`](@ref)
 wrapper is implemented as an iterative model. Moreover, this wrapper
 reports, as a training loss, the lowest value of the optimization
 objective function so far (typically the lowest value of an
 out-of-sample loss, or -1 times an out-of-sample score). One may want
-to simply end the hyper-parameter search when this value drops below
-some threshold (using the [`Threshold`](@ref) stopping criterion
-below) rather than introduce an extra layer of resampling to first
-"learn" the optimal value of the iteration parameter.
+to simply end the hyper-parameter search when this value fails to
+improve after `k` more iterations (using the [`NumberSinceBest`](@ref)
+stopping criterion below) rather than introduce an extra layer of
+resampling to first "learn" the optimal value of the iteration
+parameter.
 
+In the following example we conduct a `RandomSearch` for the optimal
+value of the regularizaion parameter `lambda` in a `RidgeRegressor`
+using 6-fold cross-validation. By wrapping our "self-tuning" version
+of the regressor as an `IteratedModel`, with `resampling=nothing` and
+`NumberSinceBest(20)` in the controls, we terminate the search when
+the number of `lambda` values tested since the previous best
+cross-validation loss reaches 20.
+
+```julia
+using MLJ
+using MLJIteration
+
+X, y = @load_boston;
+RidgeRegressor = @load RidgeRegressor pkg=MLJLinearModels verbosity=0
+model = RidgeRegressor()
+r = range(model, :lambda, lower=-1, upper=2, scale=x->10^x)
+self_tuning_model = TunedModel(model=model,
+                               tuning=RandomSearch(rng=123),
+                               resampling=CV(nfolds=6),
+                               range=r,
+                               measure=mae);
+iterated_model = IteratedModel(model=self_tuning_model,
+                               resampling=nothing,
+                               control=[Step(1), NumberSinceBest(20), NumberLimit(1000)])
+mach = machine(iterated_model, X, y);
+fit!(mach);
+report(mach).model_report.best_model
+```
 
 ## Controls provided
 
@@ -157,6 +188,7 @@ control                                              | description              
 [`Step`](@ref)`(n=1)`                                | Train model for `n` more iterations                                                     | no
 [`TimeLimit`](@ref)`(t=0.5)`                         | Stop after `t` hours                                                                    | yes
 [`NumberLimit`](@ref)`(n=100)`                       | Stop after `n` applications of the control                                              | yes
+[`NumberSinceBest`]`(n=6)`                           | Stop when best loss occurred `n` control applications ago                               | yes
 [`NotANumber`](@ref)`()`                             | Stop when `NaN` encountered                                                             | yes
 [`Threshold`](@ref)`(value=0.0)`                     | Stop when `loss < value`                                                                | yes
 [`GL`](@ref)`(alpha=2.0)`                            | ★ Stop after "GeneralizationLossDo" exceeds `alpha`                                     | yes
@@ -198,6 +230,7 @@ wrapper                                            | description
 Step
 TimeLimit
 NumberLimit
+NumberSinceBest
 NotANumber
 Threshold
 GL
@@ -228,7 +261,7 @@ value of the iteration parameter, `wrapper.n_iterations` used
 here. See more under [The training machine wrapper](@ref) below.
 
 ```julia
-struct IterateFromList 
+struct IterateFromList
     list::Vector{<:Int} # list of iteration parameter values
     IterateFromList(v) = new(unique(sort(v)))
 end
