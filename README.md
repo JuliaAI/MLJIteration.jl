@@ -420,15 +420,13 @@ end
 function IterationControl.update!(control::CycleLearningRate,
                                   wrapper,
                                   verbosity,
-                                  state = (n = 0,))
+                                  state = (n = 0, learning_rates=nothing))
     n = state.n
     rates = n == 0 ? one_cycle(control) : state.learning_rates
     index = mod(n, length(rates)) + 1
     r = rates[index]
     verbosity > 1 && @info "learning rate: $r"
-    wrapper.model.iteration_control
-                                   control.learning_rate_parameter,
-                                   r)
+    wrapper.model.iteration_control = r
     return (n = n + 1, learning_rates = rates)
 end
 ```
