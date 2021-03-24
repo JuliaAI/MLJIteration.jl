@@ -376,18 +376,52 @@ return takedown(control, verbosity, state)
 
 ### Example 2 - Cyclic learning rates
 
+The control below implements a triangular cyclic learning rate policy,
+close to that described in [L. N. Smith
+(2019)](https://ieeexplore.ieee.org/document/7926641): "Cyclical
+Learning Rates for Training Neural Networks," 2017 IEEE Winter
+Conference on Applications of Computer Vision (WACV), Santa Rosa, CA,
+USA, pp. 464-472. [In that paper learning rates are mutated (slowly)
+*during* each training iteration (epoch) while here mutations can occur
+once per iteration of the model, at most.]
+
+For the sake of illustration, we suppose the iterative model, `model`,
+specified in the `IteratedModel` constructor, has a field called
+`:learning_parameter`, and that mutating this parameter does not
+trigger cold-restarts. 
 
 ```julia
-struct CylicLearningStep{F<:AbstractFloat}
-        n::Int           # number of cycles of learning rate mutations
-        stepsize::Int    # twice this is the cycle period
-        min_lr::F        # lower learning rate
-        max_lr::F        # upper learning rate
+struct CycleLearningRate{F<:AbstractFloat}
+    stepsize::Int
+    lower::F
+    upper::F
+end
+
+# return one cycle of learning rate values:
+function one_cycle(c::CycleLearningRate)
+    rise = range(c.lower, c.upper, length=c.stepsize + 1)
+    fall = reverse(rise)
+    return vcat(rise[1:end - 1], fall[1:end - 1])
+end
+
+function IterationControl.update!(control::CycleLearningRate,
+                                  wrapper,
+                                  verbosity,
+                                  state = (n = 0,))
+    n = state.n
+    rates = n == 0 ? one_cycle(control) : state.learning_rates
+    index = mod(n, length(rates)) + 1
+    r = rates[index]
+    verbosity > 1 && @info "learning rate: $r"
+    wrapper.model.iteration_control
+                                   control.learning_rate_parameter,
+                                   r)
+    return (n = n + 1, learning_rates = rates)
 end
 ```
 
 
-## API
+## API Reference
 
 ```@docs
 IteratedModel

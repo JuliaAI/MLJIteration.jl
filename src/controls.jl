@@ -181,7 +181,7 @@ IterationControl.@create_docs(
     "the cited paper. ")
 
 # return one cycle of learning rate values:
-function learning_rates(c::CycleLearningRate)
+function one_cycle(c::CycleLearningRate)
     rise = range(c.lower, c.upper, length=c.stepsize + 1)
     fall = reverse(rise)
     return vcat(rise[1:end - 1], fall[1:end - 1])
@@ -192,7 +192,7 @@ function IterationControl.update!(control::CycleLearningRate,
                                   verbosity,
                                   state = (n = 0,))
     n = state.n
-    rates = n == 0 ? learning_rates(control) : state.learning_rates
+    rates = n == 0 ? one_cycle(control) : state.learning_rates
     index = mod(n, length(rates)) + 1
     r = rates[index]
     verbosity > 1 && @info "learning rate: $r"

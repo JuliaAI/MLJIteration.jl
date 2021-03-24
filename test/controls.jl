@@ -138,7 +138,7 @@ end
                           stepsize = 2,
                           lower = 0,
                           upper = 2)
-    @test MLJIteration.learning_rates(c) == Float64[0, 1, 2, 1]
+    @test MLJIteration.one_cycle(c) == Float64[0, 1, 2, 1]
 
     c = CycleLearningRate(learning_rate_parameter=:learning_rate,
                           stepsize = 1,
@@ -156,5 +156,5 @@ end
     @test model.learning_rate == 0.5
 end
 
-
+end
 true

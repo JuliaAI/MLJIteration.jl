@@ -190,7 +190,7 @@ end
                 Step(1),
                 NumberLimit(5*ss)]
     imodel.controls = controls
-    fit!(mach, force=true, verbosity=2)
+    fit!(mach, force=true, verbosity=0)
     yhat3 = predict(mach, X)
 
     # compare:
@@ -199,4 +199,5 @@ end
 
 end
 
+end
 true
