@@ -48,14 +48,14 @@ What follows is a draft of documentation to be added to the [MLJ
 manual](https://alan-turing-institute.github.io/MLJ.jl/dev/).
 
 ---
-# Controling Iterative Models
+# Controlling Iterative Models
 
 Iterative supervised machine learning models are usually trained until
 an out-of-sample estimate of the performance satisfies some stopping
 criterion, such as `k` consecutive deteriorations of the performance
 (see [`Patience`](@ref) below). A more sophisticated kind of control
 might dynamically mutate parameters, such as a learning rate, in
-response to the behaviour of these estimates. Some iterative model
+response to the behavior of these estimates. Some iterative model
 implementations enable some form of automated control, with the method
 and options for doing so varying from model to model. But sometimes it
 is up to the user to arrange control, which in the crudest case
@@ -64,15 +64,15 @@ reduces to manually experimenting with the iteration parameter.
 In response to this ad hoc state of affairs, MLJ provides a uniform
 and feature-rich interface for controlling any iterative model that
 exposes its iteration parameter as a hyper-parameter, and which
-implements the "warm restart" behaviour described in [Machines](@ref).
+implements the "warm restart" behavior described in [Machines](@ref).
 
 
 ## Basic use
 
-As in [Tuning models](@ref), iteration control in MLJ is implemeted as
+As in [Tuning models](@ref), iteration control in MLJ is implemented as
 a model wrapper, which allows composition with other meta-algorithms.
 Ordinarily, the wrapped model behaves just like the original model,
-but with the training occuring on a subset of the provided data (to
+but with the training occurring on a subset of the provided data (to
 allow computation of an out-of-sample loss) and with the iteration
 parameter automatically determined by the controls specified in the
 wrapper.
@@ -135,18 +135,17 @@ the `IteratedModel` wrapper, but trained in each iteration on a subset
 of the data, according to the value of the `resampling`
 hyper-parameter of the wrapper.
 
-
 control                                              | description                                                                             | can trigger a stop
 -----------------------------------------------------|-----------------------------------------------------------------------------------------|--------------------
 [`Step`](@ref)`(n=1)`                                | Train model for `n` more iterations                                                     | no
 [`TimeLimit`](@ref)`(t=0.5)`                         | Stop after `t` hours                                                                    | yes
 [`NumberLimit`](@ref)`(n=100)`                       | Stop after `n` applications of the control                                              | yes
-[`NumberSinceBest`](@ref)`(n=6)`                           | Stop when best loss occurred `n` control applications ago                               | yes
+[`NumberSinceBest`](@ref)`(n=6)`                     | Stop when best loss occurred `n` control applications ago                               | yes
 [`NotANumber`](@ref)`()`                             | Stop when `NaN` encountered                                                             | yes
 [`Threshold`](@ref)`(value=0.0)`                     | Stop when `loss < value`                                                                | yes
-[`GL`](@ref)`(alpha=2.0)`                            | † Stop after "GeneralizationLossDo" exceeds `alpha`                                     | yes
+[`GL`](@ref)`(alpha=2.0)`                            | † Stop after the "generalization loss (GL)" exceeds `alpha`                             | yes
 [`Patience`](@ref)`(n=5)`                            | † Stop after `n` consecutive loss increases                                             | yes
-[`PQ`](@ref)`(alpha=0.75, k=5)`                      | † Stop after "Progress-modified GL" exceeds `alpha`                                     | yes
+[`PQ`](@ref)`(alpha=0.75, k=5)`                      | † Stop after "progress-modified GL" exceeds `alpha`                                     | yes
 [`Info`](@ref)`(f=identity)`                         | Log to `Info` the value of `f(mach)`, where `mach` is current machine                   | no
 [`Warn`](@ref)`(predicate; f="")`                    | Log to `Warn` the value of `f` or `f(mach)` if `predicate(mach)` holds                  | no
 [`Error`](@ref)`(predicate; f="")`                   | Log to `Error` the value of `f` or `f(mach)` if `predicate(mach)` holds and then stop   | yes
@@ -182,7 +181,7 @@ wrapper                                            | description
 
 ## Using training losses, and controlling model tuning
 
-Some iterative models report a training loss, as a biproduct of a
+Some iterative models report a training loss, as a byproduct of a
 `fit!` call, and these can be used in two ways:
 
 1. To supplement an out-of-sample estimate of the loss in deciding
@@ -215,7 +214,7 @@ rather than introduce an extra layer of resampling to first "learn"
 the optimal value of the iteration parameter.
 
 In the following example we conduct a [`RandomSearch`](@ref) for the
-optimal value of the regularizaion parameter `lambda` in a
+optimal value of the regularization parameter `lambda` in a
 `RidgeRegressor` using 6-fold cross-validation. By wrapping our
 "self-tuning" version of the regressor as an [`IteratedModel`](@ref),
 with `resampling=nothing` and `NumberSinceBest(20)` in the controls,
@@ -350,11 +349,11 @@ A training machine `wrapper` has these properties:
   
 - `wrapper.loss` - the out-of-sample loss (based on the first measure in `measures`)
 
-- `wrapper.training_losses` - the last bactch of training losses (if
+- `wrapper.training_losses` - the last batch of training losses (if
   reported by `model`), an abstract vector of length
   `wrapper.Δiteration`.
   
-- `wrapper.evalution` - the complete MLJ performance evaluation
+- `wrapper.evaluation` - the complete MLJ performance evaluation
   object, which has the following properties: `measure`,
   `measurement`, `per_fold`, `per_observation`,
   `fitted_params_per_fold`, `report_per_fold` (here there is only one
