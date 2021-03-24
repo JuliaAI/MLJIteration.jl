@@ -11,24 +11,38 @@ learning framework in a control strategy.
 Builds on the generic iteration control tool
 [IterationControl.jl](https://github.com/ablaom/IterationControl.jl).
 
-Not registered  and under construction.
-
 
 ## Installation
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/ablaom/MLJIteration.jl")
+Pkg.add("MLJ")
+Pkg.add("MLJIteration")
 ```
 
-## Usage
+## Sample usage
 
 ```julia
+Pkg.add("EvoTrees")
+
 using MLJ
 using MLJIteration
+
+X, y = make_moons(1000, rng=123)
+EvoTreeClassifier = @load EvoTreeClassifier verbosity=0
+
+iterated_model = IteratedModel(model=EvoTreeClassifier(rng=123, η=0.005),
+                               resampling=Holdout(rng=123),
+                               measures=log_loss,
+                               controls=[Step(5),
+                                         Patience(2),
+                                         NumberLimit(100)],
+                               retrain=true)
+
+mach = machine(iterated_model, X, y) |> fit!;
 ```
 
-Do `?IteratedModel` for details.
+## Documentation
 
 What follows is a draft of documentation to be added to the [MLJ
 manual](https://alan-turing-institute.github.io/MLJ.jl/dev/).

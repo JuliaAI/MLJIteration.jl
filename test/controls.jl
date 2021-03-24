@@ -150,9 +150,9 @@ end
     state = @test_logs IC.update!(c, m, 1)
     @test state == (n = 1, learning_rates = [0.5, 1.5])
     @test model.learning_rate == 0.5
-    state = IC.update!(c, m, 2, state)
+    state = IC.update!(c, m, 0, state)
     @test model.learning_rate == 1.5
-    state = IC.update!(c, m, 2, state)
+    state = IC.update!(c, m, 0, state)
     @test model.learning_rate == 0.5
 end
 
