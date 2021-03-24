@@ -138,3 +138,64 @@ function IterationControl.update!(c::Save,
     return (filenumber=filenumber, )
 end
 
+
+# # CYCLE LEARNING RATE
+
+struct CycleLearningRate{F<:AbstractFloat}
+    stepsize::Int
+    lower::F
+    upper::F
+    learning_rate_parameter::Union{Symbol,Expr}
+end
+CycleLearningRate(; stepsize=4,
+                  lower::T=0.001,
+                  upper::T=0.05,
+                  learning_rate_parameter=:(optimiser.η)) where T<:Real =
+                      CycleLearningRate(stepsize,
+                                        float(lower),
+                                        float(upper),
+                                        learning_rate_parameter)
+
+IterationControl.@create_docs(
+    CycleLearningRate,
+    header="CycleLearningRate(stepsize=4, lower=0.001, "*
+    "upper=0.05, learning_rate_parameter=:(optimiser.η))",
+    example="CycleLearningRate(learning_rate_parameter=:learning_rate)",
+body="Mutate the specified `learning_rate_parameter` "*
+    "(defaulting to the field appropriate for MLJFlux models) "*
+    "to the next value "*
+    "in a triangular cyclic learning rate policy having the the "*
+    "specified parameters. "*
+    "See [L. N. Smith (2019)](https://ieeexplore.ieee.org/document/7926641): "*
+    "\"Cyclical Learning Rates for Training "*
+    "Neural Networks,\" 2017 IEEE Winter Conference on Applications "*
+    "of Computer Vision (WACV), Santa Rosa, CA, USA, pp. 464-472.\n\n"*
+    "Here `stepsize` is a number of iterations of the underlying model "*
+    "(eg, `stepsize=4` means 4 epochs in an MLJFlux model).\n\n"*
+    "**Note.** Since \"one iteration\" is the same as \"one epoch\" "*
+    "in MLJFlux models, this means learning rate updates can be applied "*
+    "once per epoch, at most, "*
+    "rather than \"continuously\" throughout an epoch, as in "*
+    "the cited paper. ")
+
+# return one cycle of learning rate values:
+function learning_rates(c::CycleLearningRate)
+    rise = range(c.lower, c.upper, length=c.stepsize + 1)
+    fall = reverse(rise)
+    return vcat(rise[1:end - 1], fall[1:end - 1])
+end
+
+function IterationControl.update!(control::CycleLearningRate,
+                                  wrapper,
+                                  verbosity,
+                                  state = (n = 0,))
+    n = state.n
+    rates = n == 0 ? learning_rates(control) : state.learning_rates
+    index = mod(n, length(rates)) + 1
+    r = rates[index]
+    verbosity > 1 && @info "learning rate: $r"
+    MLJBase.recursive_setproperty!(wrapper.model,
+                                   control.learning_rate_parameter,
+                                   r)
+    return (n = n + 1, learning_rates = rates)
+end

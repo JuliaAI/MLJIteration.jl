@@ -133,7 +133,27 @@ end
     @test yhat ≈ predict(train_mach, X)
 end
 
+@testset "CycleLearningRate" begin
+    c = CycleLearningRate(learning_rate_parameter=:learning_rate,
+                          stepsize = 2,
+                          lower = 0,
+                          upper = 2)
+    @test MLJIteration.learning_rates(c) == Float64[0, 1, 2, 1]
 
+    c = CycleLearningRate(learning_rate_parameter=:learning_rate,
+                          stepsize = 1,
+                          lower = 0.5,
+                          upper = 1.5)
+    model = DummyIterativeModel(n=0, learning_rate=42)
+    m = MLJIteration.ICModel(machine(model, X, y), :n, 0)
+    state = @test_logs (:info, r"learning rate") IC.update!(c, m, 2)
+    state = @test_logs IC.update!(c, m, 1)
+    @test state == (n = 1, learning_rates = [0.5, 1.5])
+    @test model.learning_rate == 0.5
+    state = IC.update!(c, m, 2, state)
+    @test model.learning_rate == 1.5
+    state = IC.update!(c, m, 2, state)
+    @test model.learning_rate == 0.5
 end
 
 

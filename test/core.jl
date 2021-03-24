@@ -154,7 +154,48 @@ end
     @test yhat3 ≈ yhat4
 end
 
+@testset "integration: cyclic learning rates" begin
 
+    X, y = make_dummy(N=100)
+    ss = 3
+    model = DummyIterativeModel()
+
+    # constant learning rate:
+    controls = [CycleLearningRate(stepsize=ss,
+                                  lower=1,
+                                  upper=1,
+                                  learning_rate_parameter=:learning_rate),
+                Step(1),
+                NumberLimit(5*ss)]
+
+    imodel = IteratedModel(model=model,
+                           resampling=Holdout(fraction_train=0.7),
+                           controls=controls,
+                           measure=mae)
+
+    mach = machine(imodel, X, y)
+    fit!(mach, verbosity=0)
+    yhat1 = predict(mach, X)
+
+    # no cycling:
+    imodel.controls = [Step(1), NumberLimit(5*ss)]
+    fit!(mach, force=true, verbosity=0)
+    yhat2 = predict(mach, X)
+
+    # with real cycling:
+    controls = [CycleLearningRate(stepsize=ss,
+                                  lower=0.5,
+                                  upper=1.5,
+                                  learning_rate_parameter=:learning_rate),
+                Step(1),
+                NumberLimit(5*ss)]
+    imodel.controls = controls
+    fit!(mach, force=true, verbosity=2)
+    yhat3 = predict(mach, X)
+
+    # compare:
+    @test yhat1 ≈ yhat2
+    @test !(yhat3 ≈ yhat2)
 
 end
 

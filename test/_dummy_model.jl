@@ -31,17 +31,25 @@ end
 
 # THE DUMMY MLJ MODEL
 
-# Suppose `X` is a vector with `Finite` elscitype and `y` is a vector of
-# `Continuous` elscitype. `DummyModel` predicts `y` given `X` by
+# Suppose `X` is a vector with `Finite` elscitype and `y` is a vector
+# of `Continuous` elscitype. `DummyModel` predicts `y` given `X` by
 # randomly sampling from the training data, without replacement, `n`
-# times, and averaging the results for each class of `X`.
+# times, and averaging the results for each class of `X`. If
+# `learning_rate` is set to a number different from
+# 1.0, then each target value is increased by `(learning_rate - 1)/n`.
 
 
 mutable struct DummyIterativeModel <: Deterministic
     n::Int
     rng::LehmerRNG
+    learning_rate::Float64
 end
-DummyIterativeModel(; n=10, rng=LehmerRNG(123)) = DummyIterativeModel(n, rng)
+DummyIterativeModel(; n=10,
+                    rng=LehmerRNG(123),
+                    learning_rate=1.0) =
+                        DummyIterativeModel(n,
+                                            rng,
+                                            learning_rate)
 
 # core fitting function:
 function train!(guesser_given_class,
@@ -50,13 +58,14 @@ function train!(guesser_given_class,
                 training_losses,
                 rng,
                 global_avg_given_class,
+                learning_rate,
                 X,
                 y)
     loss = isempty(training_losses) ? Inf : training_losses[end]
     for _ in 1:n
         i = rand(rng, eachindex(X))
         class = X[i]
-        r = y[i]
+        r = y[i]*(1 + (learning_rate - 1)/n)
         guesser = guesser_given_class[class]
         train!(guesser, r)
         global_avg = global_avg_given_class[class]
@@ -82,13 +91,14 @@ function MMI.fit(model::DummyIterativeModel, verbosity, X, y)
     rng = copy(model.rng)
 
     train!(guesser_given_class,
-                model.n,
-                verbosity,
-                training_losses,
-                rng,
-                global_avg_given_class,
-                X,
-                y)
+           model.n,
+           verbosity,
+           training_losses,
+           rng,
+           global_avg_given_class,
+           model.learning_rate,
+           X,
+           y)
 
     fitresult = guesser_given_class
     report = (training_losses=training_losses, )
@@ -119,6 +129,7 @@ function MMI.update(model::DummyIterativeModel,
            training_losses,
            rng,
            global_avg_given_class,
+           model.learning_rate,
            X,
            y)
 
@@ -176,7 +187,16 @@ end
 # mach = machine(model, X, y) |> fit!
 # fp_onehit = fitted_params(mach)
 
+# # compare:
 # @assert fp_onehit == fp_stages
 
 # @assert training_losses(mach) == report(mach).training_losses
 # @assert length(training_losses(mach)) == 9
+
+# # train with lower learning rate:
+# model = DummyIterativeModel(n=9, learning_rate=0.5)
+# mach = machine(model, X, y) |> fit!
+# fp_slow = fitted_params(mach)
+
+# # compare:
+# @assert !(fp_slow.fitresult['a'].avg ≈ fp_onehit.fitresult['a'].avg)

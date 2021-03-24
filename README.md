@@ -130,9 +130,9 @@ control                                              | description              
 [`NumberSinceBest`](@ref)`(n=6)`                           | Stop when best loss occurred `n` control applications ago                               | yes
 [`NotANumber`](@ref)`()`                             | Stop when `NaN` encountered                                                             | yes
 [`Threshold`](@ref)`(value=0.0)`                     | Stop when `loss < value`                                                                | yes
-[`GL`](@ref)`(alpha=2.0)`                            | ★ Stop after "GeneralizationLossDo" exceeds `alpha`                                     | yes
-[`Patience`](@ref)`(n=5)`                            | ★ Stop after `n` consecutive loss increases                                             | yes
-[`PQ`](@ref)`(alpha=0.75, k=5)`                      | ★ Stop after "Progress-modified GL" exceeds `alpha`                                     | yes
+[`GL`](@ref)`(alpha=2.0)`                            | † Stop after "GeneralizationLossDo" exceeds `alpha`                                     | yes
+[`Patience`](@ref)`(n=5)`                            | † Stop after `n` consecutive loss increases                                             | yes
+[`PQ`](@ref)`(alpha=0.75, k=5)`                      | † Stop after "Progress-modified GL" exceeds `alpha`                                     | yes
 [`Info`](@ref)`(f=identity)`                         | Log to `Info` the value of `f(mach)`, where `mach` is current machine                   | no
 [`Warn`](@ref)`(predicate; f="")`                    | Log to `Warn` the value of `f` or `f(mach)` if `predicate(mach)` holds                  | no
 [`Error`](@ref)`(predicate; f="")`                   | Log to `Error` the value of `f` or `f(mach)` if `predicate(mach)` holds and then stop   | yes
@@ -145,7 +145,7 @@ control                                              | description              
 
 > Table 1. Atomic controls. Some advanced options omitted.
 
-★ For more these controls see [Prechelt, Lutz
+† For more these controls see [Prechelt, Lutz
  (1998)](https://link.springer.com/chapter/10.1007%2F3-540-49430-8_3):
  "Early Stopping - But When?", in *Neural Networks: Tricks of the
  Trade*, ed. G. Orr, Springer.
@@ -230,7 +230,7 @@ report(mach).model_report.best_model
 ```
 
 We can use `mach` here to directly obtain predictions using the
-optimal model, as in
+optimal model (trained on all data), as in
 
 ```@example gree
 predict(mach, selectrows(X, 1:4))
@@ -270,19 +270,22 @@ In the code, `wrapper` is an object that wraps the training machine
 (see above).
 
 ```julia
+
+import IterationControl # or MLJIteration.IterationControl
+
 struct IterateFromList
     list::Vector{<:Int} # list of iteration parameter values
     IterateFromList(v) = new(unique(sort(v)))
 end
 
-function MLJIteration.update!(control::IterateFromList, wrapper, verbosity)
+function IterationControl.update!(control::IterateFromList, wrapper, verbosity)
     Δi = control.list[1]
     verbosity > 1 && @info "Training $Δi more iterations. "
     MLJIteration.train!(wrapper, Δi) # trains the training machine
     return (index = 2, )
 end
 
-function MLJIteration.update!(control::IterateFromList, wrapper, verbosity, state)
+function IterationControl.update!(control::IterateFromList, wrapper, verbosity, state)
     index = state.positioin_in_list
     Δi = control.list[i] - wrapper.n_iterations
     verbosity > 1 && @info "Training $Δi more iterations. "
@@ -299,7 +302,7 @@ control applications (and which returns the updated `state`).
 A `done` method articulates the criterion for stopping:
 
 ```julia
-MLJIteration.done(control::IterateFromList, state) =
+IterationControl.done(control::IterateFromList, state) =
     state.index > length(control.list)
 ```
 
@@ -307,7 +310,7 @@ For the sake of illustration, we'll implement a `takedown` method; its
 return value is included in the `IteratedModel` report:
 
 ```julia
-MLJIteration.takedown(control::IterateFromList, verbosity, state) 
+IterationControl.takedown(control::IterateFromList, verbosity, state) 
     verbosity > 1 && = @info "Stepped through these values of the "*
                               "iteration parameter: $(control.list)"
     return (iteration_values=control.list, )
@@ -380,9 +383,7 @@ struct CylicLearningStep{F<:AbstractFloat}
         stepsize::Int    # twice this is the cycle period
         min_lr::F        # lower learning rate
         max_lr::F        # upper learning rate
-    learning_rate_parameter::Union{Symbol,Expr}
 end
-
 ```
 
 
