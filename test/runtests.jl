@@ -22,3 +22,7 @@ end
 @testset "core" begin
     include("core.jl")
 end
+
+@testset "traits" begin
+    include("traits.jl")
+end
