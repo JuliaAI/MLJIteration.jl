@@ -12,7 +12,7 @@ MLJBase.package_name(::Type{<:EitherIteratedModel}) = "MLJIteration"
 MLJBase.package_uuid(::Type{<:EitherIteratedModel}) =
     "614be32b-d00c-4edb-bd02-1eb411ab5e55"
 MLJBase.package_url(::Type{<:EitherIteratedModel}) =
-    "https://github.com/ablaom/MLJIteration.jl"
+    "https://github.com/JuliaAI/MLJIteration.jl"
 MLJBase.package_license(::Type{<:EitherIteratedModel}) = "MIT"
 MLJBase.is_pure_julia(::Type{<:EitherIteratedModel{M}}) where {T,M} =
     MLJBase.is_pure_julia(M)
