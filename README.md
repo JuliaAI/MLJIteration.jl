@@ -190,7 +190,7 @@ Some iterative models report a training loss, as a byproduct of a
  or
 
 2. As a (generally less reliable) substitute for an out-of-sample
-  loss, when wishing to train on all data supplied data.
+  loss, when wishing to train excusivley on all supplied data.
 
 To have `IteratedModel` bind all data to the training machine and use
 training losses in place of an out-of-sample loss, simply specify
@@ -218,7 +218,7 @@ optimal value of the regularization parameter `lambda` in a
 `RidgeRegressor` using 6-fold cross-validation. By wrapping our
 "self-tuning" version of the regressor as an [`IteratedModel`](@ref),
 with `resampling=nothing` and `NumberSinceBest(20)` in the controls,
-we terminate the search when the number of `lambda` values tested
+we terminate the search when the bnumber of `lambda` values tested
 since the previous best cross-validation loss reaches 20.
 
 ```@example gree
