@@ -22,7 +22,7 @@ const CONTROLS_DEFAULT = [Step(10),
                           Patience(5),
                           GL(),
                           TimeLimit(0.03), # about 2 mins
-                          NotANumber()],
+                          NotANumber()]
 
 include("utilities.jl")
 include("constructors.jl")
