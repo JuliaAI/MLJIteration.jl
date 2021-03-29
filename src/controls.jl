@@ -10,11 +10,13 @@ end
 WithIterationsDo(f::Function;
      stop_if_true=false,
      stop_message=nothing) = WithIterationsDo(f, stop_if_true, stop_message)
-WithIterationsDo(; f=n->@info(n), kwargs...) = WithIterationsDo(f, kwargs...)
+WithIterationsDo(; f=n->@info("num iterations: $n"), kwargs...) =
+WithIterationsDo(f, kwargs...)
 
 IterationControl.@create_docs(
     WithIterationsDo,
-    header="WithIterationsDo(f=n->@info(n), stop_if_true=false, "*
+    header="WithIterationsDo(f=n->@info(\"num iterations: \$n\"), "*
+    "stop_if_true=false, "*
     "stop_message=nothing)",
     example="WithIterationsDo(i->put!(my_channel, i))",
     body="Call `f(i)`, where "*
