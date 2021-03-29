@@ -25,8 +25,8 @@ X, y = make_dummy(N=8);
     @test IC.takedown(c, 0, state) == (done = false, log="")
 
     v = Int[]
-    f(n) = (push!(v, n); n > 3)
-    c = WithIterationsDo(f, stop_if_true=true)
+    f2(n) = (push!(v, n); n > 3)
+    c = WithIterationsDo(f2, stop_if_true=true)
     m = MLJIteration.ICModel(machine(DummyIterativeModel(n=0), X, y), :n, 0)
     IC.train!(m, 2)
     state = IC.update!(c, m, 0)
@@ -41,8 +41,8 @@ X, y = make_dummy(N=8);
          log="Stop triggered by a `WithIterationsDo` control. ")
 
     v = Int[]
-    f(n) = (push!(v, n); n > 3)
-    c = WithIterationsDo(f, stop_if_true=true, stop_message="foo")
+    f3(n) = (push!(v, n); n > 3)
+    c = WithIterationsDo(f3, stop_if_true=true, stop_message="foo")
     m = MLJIteration.ICModel(machine(DummyIterativeModel(n=0), X, y), :n, 0)
     IC.train!(m, 2)
     state = IC.update!(c, m, 0)
@@ -78,8 +78,8 @@ resampler = MLJBase.Resampler(model=DummyIterativeModel(n=0),
     @test IC.takedown(c, 0, state) == (done = false, log="")
 
     v = Any[]
-    f(e) = (push!(v, e.measurement[1]); e.measurement[1][1] < 9.0)
-    c = WithEvaluationDo(f, stop_if_true=true)
+    f2(e) = (push!(v, e.measurement[1]); e.measurement[1][1] < 9.0)
+    c = WithEvaluationDo(f2, stop_if_true=true)
     resampling_machine = machine(deepcopy(resampler), X, y)
     m = MLJIteration.ICModel(resampling_machine, :n, 0)
     IC.train!(m, 2)
@@ -95,8 +95,8 @@ resampler = MLJBase.Resampler(model=DummyIterativeModel(n=0),
          log="Stop triggered by a `WithEvaluationDo` control. ")
 
     v = Any[]
-    f(e) = (push!(v, e.measurement[1]); e.measurement[1][1] < 9.0)
-    c = WithEvaluationDo(f, stop_if_true=true, stop_message="foo")
+    f3(e) = (push!(v, e.measurement[1]); e.measurement[1][1] < 9.0)
+    c = WithEvaluationDo(f3, stop_if_true=true, stop_message="foo")
     resampling_machine = machine(deepcopy(resampler), X, y)
     m = MLJIteration.ICModel(resampling_machine, :n, 0)
     IC.train!(m, 2)
