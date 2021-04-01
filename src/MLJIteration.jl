@@ -10,7 +10,6 @@ export IteratedModel
 const CONTROLS = vcat(IterationControl.CONTROLS,
                       [:WithIterationsDo,
                        :WithEvaluationDo,
-                       :Save,
                        :CycleLearningRate])
 
 # export all control types:
