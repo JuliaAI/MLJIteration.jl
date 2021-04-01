@@ -10,10 +10,9 @@ export IteratedModel
 const CONTROLS = vcat(IterationControl.CONTROLS,
                       [:WithIterationsDo,
                        :WithEvaluationDo,
-                       :Save,
                        :CycleLearningRate])
 
-# re-export from IterationControl.jl:
+# export all control types:
 for control in CONTROLS
     eval(:(export $control))
 end
