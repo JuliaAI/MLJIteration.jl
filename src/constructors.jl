@@ -53,7 +53,6 @@ const ERR_NEED_PARAMETER =
                   measure=nothing,
                   weights=nothing,
                   class_weights=nothing,
-                  class_weights=nothing,
                   operation=predict,
                   verbosity=1,
                   check_measure=true,
@@ -216,7 +215,8 @@ end
 
 function MLJBase.clean!(iterated_model::EitherIteratedModel)
     message = ""
-    if iterated_model.measure === nothing
+    if iterated_model.measure === nothing &&
+        iterated_model.resampling !== nothing
         iterated_model.measure = MLJBase.default_measure(iterated_model.model)
         if iterated_model.measure === nothing
             throw(ERR_NEED_MEASURE)
