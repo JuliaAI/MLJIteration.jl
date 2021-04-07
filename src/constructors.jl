@@ -53,7 +53,6 @@ const ERR_NEED_PARAMETER =
                   measure=nothing,
                   weights=nothing,
                   class_weights=nothing,
-                  class_weights=nothing,
                   operation=predict,
                   verbosity=1,
                   check_measure=true,
