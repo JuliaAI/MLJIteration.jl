@@ -26,13 +26,16 @@ const CONTROLS_DEFAULT = [Step(10),
                           NotANumber()]
 
 include("utilities.jl")
-include("constructors.jl")
-include("traits.jl")
-include("ic_model.jl")
 include("controls.jl")
-include("core.jl")
 
 const Control = Union{[@eval($c) for c in CONTROLS]...}
 const TrainingControl = Union{[@eval($c) for c in TRAINING_CONTROLS]...}
+
+include("constructors.jl")
+include("traits.jl")
+include("ic_model.jl")
+include("core.jl")
+
+
 
 end # module

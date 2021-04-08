@@ -1,6 +1,6 @@
 const ERR_MISSING_TRAINING_CONTROL =
     ArgumentError("At least one control must be a training control "*
-                  "(ie, be on this list: $TRAINING_CONTROLS) or be a "*
+                  "(have type `$TrainingControl`) or be a "*
                   "custom control that calls IterationControl.train!. ")
 
 
