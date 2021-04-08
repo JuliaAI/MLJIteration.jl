@@ -28,6 +28,10 @@ struct Bar <: MLJBase.Deterministic end
                              resampling=Holdout(rng=123),
                              measure=rms))
 
+    @test_throws(MLJIteration.ERR_MISSING_TRAINING_CONTROL,
+                 IteratedModel(model=model,
+                               resampling=nothing,
+                               controls=[Patience(), NotANumber()]))
 end
 
 end

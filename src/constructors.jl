@@ -1,3 +1,9 @@
+const ERR_MISSING_TRAINING_CONTROL =
+    ArgumentError("At least one control must be a training control "*
+                  "(ie, be on this list: $TRAINING_CONTROLS) or be a "*
+                  "custom control that calls IterationControl.train!. ")
+
+
 ## TYPES AND CONSTRUCTOR
 
 mutable struct DeterministicIteratedModel{M<:Deterministic} <: MLJBase.Deterministic
@@ -234,5 +240,13 @@ function MLJBase.clean!(iterated_model::EitherIteratedModel)
             "each increment of the iteration parameter "*
             "will force iteration from scratch (cold restart). "
     end
+
+    training_control_candidates = filter(iterated_model.controls) do c
+        c isa TrainingControl || !(c isa Control)
+    end
+    if isempty(training_control_candidates)
+        throw(ERR_MISSING_TRAINING_CONTROL)
+    end
+
     return message
 end
