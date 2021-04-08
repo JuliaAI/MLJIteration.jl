@@ -12,6 +12,8 @@ const CONTROLS = vcat(IterationControl.CONTROLS,
                        :WithEvaluationDo,
                        :CycleLearningRate])
 
+const TRAINING_CONTROLS = [:Step, ]
+
 # export all control types:
 for control in CONTROLS
     eval(:(export $control))
@@ -24,11 +26,16 @@ const CONTROLS_DEFAULT = [Step(10),
                           NotANumber()]
 
 include("utilities.jl")
+include("controls.jl")
+
+const Control = Union{[@eval($c) for c in CONTROLS]...}
+const TrainingControl = Union{[@eval($c) for c in TRAINING_CONTROLS]...}
+
 include("constructors.jl")
 include("traits.jl")
 include("ic_model.jl")
-include("controls.jl")
 include("core.jl")
+
 
 
 end # module
