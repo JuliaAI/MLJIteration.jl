@@ -1,3 +1,9 @@
+const ERR_MISSING_TRAINING_CONTROL =
+    ArgumentError("At least one control must be a training control "*
+                  "(have type `$TrainingControl`) or be a "*
+                  "custom control that calls IterationControl.train!. ")
+
+
 ## TYPES AND CONSTRUCTOR
 
 mutable struct DeterministicIteratedModel{M<:Deterministic} <: MLJBase.Deterministic
@@ -176,8 +182,6 @@ function IteratedModel(; model=nothing,
 
     model == nothing && throw(ERR_NO_MODEL)
 
-
-
     if model isa Deterministic
         iterated_model = DeterministicIteratedModel(model,
                                                     controls,
@@ -228,6 +232,21 @@ function MLJBase.clean!(iterated_model::EitherIteratedModel)
     iterated_model.iteration_parameter === nothing &&
         iteration_parameter(iterated_model.model) === nothing &&
         throw(ERR_NEED_PARAMETER)
+
+    if iterated_model.resampling isa Holdout &&
+        iterated_model.resampling.shuffle
+        message *= "The use of sample-shuffling in `Holdout` "*
+            "will significantly slow training as "*
+            "each increment of the iteration parameter "*
+            "will force iteration from scratch (cold restart). "
+    end
+
+    training_control_candidates = filter(iterated_model.controls) do c
+        c isa TrainingControl || !(c isa Control)
+    end
+    if isempty(training_control_candidates)
+        throw(ERR_MISSING_TRAINING_CONTROL)
+    end
 
     return message
 end

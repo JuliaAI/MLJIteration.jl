@@ -5,7 +5,7 @@ export DummyIterativeModel, make_dummy
 using Random
 using Statistics
 import StableRNGs.LehmerRNG
-using CategoricalArrays
+using MLJBase.CategoricalArrays
 import Base.==
 
 using MLJModelInterface
