@@ -21,7 +21,13 @@ struct Bar <: MLJBase.Deterministic end
     @test iterated_model.measure == RootMeanSquaredError()
     @test_logs IteratedModel(model=model, measure=mae)
 
-    iterated_model = @test_logs IteratedModel(model=model, resampling=nothing)
+    @test_logs IteratedModel(model=model, resampling=nothing)
+
+    @test_logs((:info, r"The use of sample"),
+               IteratedModel(model=model,
+                             resampling=Holdout(rng=123),
+                             measure=rms))
+
 end
 
 end
