@@ -176,8 +176,6 @@ function IteratedModel(; model=nothing,
 
     model == nothing && throw(ERR_NO_MODEL)
 
-
-
     if model isa Deterministic
         iterated_model = DeterministicIteratedModel(model,
                                                     controls,
@@ -229,5 +227,12 @@ function MLJBase.clean!(iterated_model::EitherIteratedModel)
         iteration_parameter(iterated_model.model) === nothing &&
         throw(ERR_NEED_PARAMETER)
 
+    if iterated_model.resampling isa Holdout &&
+        iterated_model.resampling.shuffle
+        message *= "The use of sample-shuffling in `Holdout` "*
+            "will significantly slow training as "*
+            "each increment of the iteration parameter "*
+            "will force iteration from scratch (cold restart). "
+    end
     return message
 end
