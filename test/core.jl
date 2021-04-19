@@ -60,6 +60,8 @@ model = DummyIterativeModel(n=0)
                noise(2)...,
                (:info, r""),
                (:info, r""),
+               (:info, r""),
+               (:info, r""),
                fit!(mach))
     @test report(mach).n_iterations == i + 2
 
@@ -68,6 +70,8 @@ model = DummyIterativeModel(n=0)
     imodel.model.n = 1
     @test_logs((:info, r"Updating"),
                noise(1)...,
+               (:info, r""),
+               (:info, r""),
                (:info, r""),
                (:info, r""),
                fit!(mach))
@@ -81,6 +85,8 @@ model = DummyIterativeModel(n=0)
                        Info(x->"43")]
     @test_logs((:info, r"Updating"),
                noise(5)...,
+               (:info, r""),
+               (:info, r""),
                (:info, r""),
                (:info, r""),
                fit!(mach))
