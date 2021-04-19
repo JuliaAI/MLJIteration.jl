@@ -31,7 +31,7 @@ struct Bar <: MLJBase.Deterministic end
     @test_throws(MLJIteration.ERR_MISSING_TRAINING_CONTROL,
                  IteratedModel(model=model,
                                resampling=nothing,
-                               controls=[Patience(), NotANumber()]))
+                               controls=[Patience(), InvalidValue()]))
 end
 
 end
