@@ -72,16 +72,13 @@ MLJBase.predict(::FooBar, ::Any, Xnew) = ones(length(Xnew))
                 y)
     fit!(resampling_machine, verbosity=0)
     ic_model = MLJIteration.ICModel(resampling_machine, :n, 0)
-    @test_throws(MLJIteration.ERR_TRAINING_LOSSES,
-                 IterationControl.training_losses(ic_model))
+    @test IterationControl.training_losses(ic_model) === nothing
 
     mach = machine(FooBar(10), X, y)
     fit!(mach, verbosity=0)
     ic_model = MLJIteration.ICModel(mach, :n, 0)
-    @test_throws(MLJIteration.ERR_TRAINING_LOSSES,
-                 IterationControl.training_losses(ic_model))
-    @test_throws(MLJIteration.ERR_TRAINING_LOSSES,
-                 IterationControl.loss(ic_model))
+    @test IterationControl.training_losses(ic_model) === nothing
+    @test IterationControl.loss(ic_model) === nothing
 end
 
 @testset "ICModel interface for users" begin
