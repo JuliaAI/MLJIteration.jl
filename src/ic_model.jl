@@ -2,12 +2,8 @@
 # (cf. MLJBase/src/resampling.jl). It is for the wrapped type that we
 # will be overloading the methods of `IterationControl`.
 
-const ERR_TRAINING_LOSSES =
-    ArgumentError("Attempt to inspect training losses for "*
-                  "a model that doesn't report them. ")
 const ERR_EVALUATION =
     ArgumentError("There are no evaluation objects if `resampling=nothing`. ")
-
 
 mlj_model(mach::Machine) = mach.model
 mlj_model(mach::Machine{<:Resampler}) = mach.model.model
@@ -63,7 +59,7 @@ IterationControl.expose(ic_model::ICModel{<:Machine{<:Resampler}}) =
 # overloading `loss` - for `resampling === nothing`:
 function IterationControl.loss(m::ICModel)
     losses = training_losses(IterationControl.expose(m))
-    losses === nothing && throw(ERR_TRAINING_LOSSES)
+    losses isa Nothing && return nothing
     return last(losses)
 end
 
@@ -75,7 +71,7 @@ IterationControl.loss(m::ICModel{<:Machine{<:Resampler}}) =
 function IterationControl.training_losses(m::ICModel)
     mach = IterationControl.expose(m)
     losses = training_losses(mach)
-    losses === nothing && throw(ERR_TRAINING_LOSSES)
+    losses isa Nothing && return nothing
     s = length(losses)
     return view(losses, (s - m.Δi[] + 1):s)
 end
