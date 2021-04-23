@@ -29,7 +29,9 @@ IterationControl.@create_docs(
 
 function IterationControl.update!(c::WithIterationsDo,
                                   ic_model,
-                                  verbosity, state...)
+                                  verbosity,
+                                  n,
+                                  state...)
     i = ic_model.n_iterations
     r = c.f(i)
     done = (c.stop_if_true && r isa Bool && r) ? true : false
@@ -83,7 +85,9 @@ IterationControl.@create_docs(
 
 function IterationControl.update!(c::WithEvaluationDo,
                                   ic_model,
-                                  verbosity, state...)
+                                  verbosity,
+                                  n,
+                                  state...)
     e = ic_model.evaluation
     r = c.f(e)
     done = (c.stop_if_true && r isa Bool && r) ? true : false
@@ -156,6 +160,7 @@ end
 function IterationControl.update!(control::CycleLearningRate,
                                   wrapper,
                                   verbosity,
+                                  ncycles,
                                   state = (n = 0,))
     n = state.n
     rates = n == 0 ? one_cycle(control) : state.learning_rates

@@ -15,11 +15,11 @@ X, y = make_dummy(N=8);
     c = WithIterationsDo(f)
     m = MLJIteration.ICModel(machine(DummyIterativeModel(n=0), X, y), :n, 0)
     IC.train!(m, 2)
-    state = IC.update!(c, m, 0)
+    state = IC.update!(c, m, 0, 1)
     @test !state.done
     @test v == [2, ]
     IC.train!(m, 2)
-    state = IC.update!(c, m, 0, state)
+    state = IC.update!(c, m, 0, 2, state)
     @test !state.done
     @test v == [2, 4]
     @test IC.takedown(c, 0, state) == (done = false, log="")
@@ -29,11 +29,11 @@ X, y = make_dummy(N=8);
     c = WithIterationsDo(f2, stop_if_true=true)
     m = MLJIteration.ICModel(machine(DummyIterativeModel(n=0), X, y), :n, 0)
     IC.train!(m, 2)
-    state = IC.update!(c, m, 0)
+    state = IC.update!(c, m, 0, 1)
     @test !state.done
     @test v == [2, ]
     IC.train!(m, 2)
-    state = IC.update!(c, m, 0, state)
+    state = IC.update!(c, m, 0, 2, state)
     @test state.done
     @test v == [2, 4]
     @test IC.takedown(c, 0, state) ==
@@ -45,11 +45,11 @@ X, y = make_dummy(N=8);
     c = WithIterationsDo(f3, stop_if_true=true, stop_message="foo")
     m = MLJIteration.ICModel(machine(DummyIterativeModel(n=0), X, y), :n, 0)
     IC.train!(m, 2)
-    state = IC.update!(c, m, 0)
+    state = IC.update!(c, m, 0, 1)
     @test !state.done
     @test v == [2, ]
     IC.train!(m, 2)
-    state = IC.update!(c, m, 0, state)
+    state = IC.update!(c, m, 0, 2, state)
     @test state.done
     @test v == [2, 4]
     @test IC.takedown(c, 0, state) ==
@@ -68,11 +68,11 @@ resampler = MLJBase.Resampler(model=DummyIterativeModel(n=0),
     resampling_machine = machine(deepcopy(resampler), X, y)
     m = MLJIteration.ICModel(resampling_machine, :n, 0)
     IC.train!(m, 2)
-    state = IC.update!(c, m, 0)
+    state = IC.update!(c, m, 0, 1)
     @test !state.done
     @test length(v) == 1
     IC.train!(m, 2)
-    state = IC.update!(c, m, 0, state)
+    state = IC.update!(c, m, 0, 2, state)
     @test !state.done
     @test length(v) == 2
     @test IC.takedown(c, 0, state) == (done = false, log="")
@@ -83,11 +83,11 @@ resampler = MLJBase.Resampler(model=DummyIterativeModel(n=0),
     resampling_machine = machine(deepcopy(resampler), X, y)
     m = MLJIteration.ICModel(resampling_machine, :n, 0)
     IC.train!(m, 2)
-    state = IC.update!(c, m, 0)
+    state = IC.update!(c, m, 0, 1)
     @test !state.done
     @test length(v) == 1
     IC.train!(m, 2)
-    state = IC.update!(c, m, 0, state)
+    state = IC.update!(c, m, 0, 2, state)
     @test state.done
     @test length(v) == 2
     @test IC.takedown(c, 0, state) ==
@@ -100,11 +100,11 @@ resampler = MLJBase.Resampler(model=DummyIterativeModel(n=0),
     resampling_machine = machine(deepcopy(resampler), X, y)
     m = MLJIteration.ICModel(resampling_machine, :n, 0)
     IC.train!(m, 2)
-    state = IC.update!(c, m, 0)
+    state = IC.update!(c, m, 0, 1)
     @test !state.done
     @test length(v) == 1
     IC.train!(m, 2)
-    state = IC.update!(c, m, 0, state)
+    state = IC.update!(c, m, 0, 2, state)
     @test state.done
     @test length(v) == 2
     @test IC.takedown(c, 0, state) ==
@@ -125,13 +125,13 @@ end
                           upper = 1.5)
     model = DummyIterativeModel(n=0, learning_rate=42)
     m = MLJIteration.ICModel(machine(model, X, y), :n, 0)
-    state = @test_logs (:info, r"learning rate") IC.update!(c, m, 2)
-    state = @test_logs IC.update!(c, m, 1)
+    state = @test_logs (:info, r"learning rate") IC.update!(c, m, 2, 1)
+    state = @test_logs IC.update!(c, m, 1, 1)
     @test state == (n = 1, learning_rates = [0.5, 1.5])
     @test model.learning_rate == 0.5
-    state = IC.update!(c, m, 0, state)
+    state = IC.update!(c, m, 0, 2, state)
     @test model.learning_rate == 1.5
-    state = IC.update!(c, m, 0, state)
+    state = IC.update!(c, m, 0, 3, state)
     @test model.learning_rate == 0.5
 end
 
