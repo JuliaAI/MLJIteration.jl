@@ -3,6 +3,9 @@ const ERR_MISSING_TRAINING_CONTROL =
                   "(have type `$TrainingControl`) or be a "*
                   "custom control that calls IterationControl.train!. ")
 
+const IterationResamplingTypes =
+    Union{Holdout,Nothing,MLJBase.TrainTestPairs}
+
 
 ## TYPES AND CONSTRUCTOR
 
@@ -233,17 +236,26 @@ function MLJBase.clean!(iterated_model::EitherIteratedModel)
         iteration_parameter(iterated_model.model) === nothing &&
         throw(ERR_NEED_PARAMETER)
 
-    if iterated_model.resampling isa Holdout &&
-        iterated_model.resampling.shuffle
-        message *= "The use of sample-shuffling in `Holdout` "*
-            "will significantly slow training as "*
-            "each increment of the iteration parameter "*
-            "will force iteration from scratch (cold restart). "
+    resampling = iterated_model.resampling
+
+    resampling isa IterationResamplingTypes || begin
+        message *= "`resampling` must be `nothing`, `Holdout(...)`, or "*
+        "a vector of the form `[(train, test),]`, where `train` and `test` "*
+        "are valid row indices for the data, as in "*
+        "`resampling = [([1, 2, 3], [4, 5]),]`. "
+    end
+
+    if resampling isa MLJBase.TrainTestPairs
+        length(resampling) == 1 || begin
+            message *= "A `resampling` vector may contain only one "*
+                "`(train, test)` pair. "
+        end
     end
 
     training_control_candidates = filter(iterated_model.controls) do c
         c isa TrainingControl || !(c isa Control)
     end
+
     if isempty(training_control_candidates)
         throw(ERR_MISSING_TRAINING_CONTROL)
     end

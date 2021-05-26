@@ -23,10 +23,18 @@ struct Bar <: MLJBase.Deterministic end
 
     @test_logs IteratedModel(model=model, resampling=nothing)
 
-    @test_logs((:info, r"The use of sample"),
+    @test_logs((:info, r"`resampling` must be"),
                IteratedModel(model=model,
-                             resampling=Holdout(rng=123),
+                             resampling=CV(),
                              measure=rms))
+    @test_logs((:info, r"A `resampling` vector may contain"),
+               IteratedModel(model=model,
+                             resampling=[([1, 2], [3, 4]),
+                                         ([3, 4], [1, 2])],
+                             measure=rms))
+    @test_logs IteratedModel(model=model,
+                             resampling=[([1, 2], [3, 4]),],
+                             measure=rms)
 
     @test_throws(MLJIteration.ERR_MISSING_TRAINING_CONTROL,
                  IteratedModel(model=model,
