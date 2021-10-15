@@ -2,7 +2,7 @@
 
 const EXTRACTOR_GIVEN_STR = Dict(
     "iterations"    => :(ic_model.n_iterations),
-    "evaluation"   => :(ic_model.evaluation),
+    "evaluation"    => :(ic_model.evaluation),
     "fitted_params" => :(fitted_params(ic_model.machine)),
     "report"        => :(report(ic_model.machine)),
     "machine"       => :(ic_model.machine))
@@ -27,11 +27,11 @@ const DOC_GIVEN_STR = Dict(
 
     "fitted_params" =>
     "`x = fitted_params(mach)` is the fitted parameters "*
-    "of the training machine in its current state",
+    "of the training machine, `mach`, in its current state",
 
     "report"       =>
     "`x = report(mach)` is the report associated with the training "*
-    "machine in its current state",
+    "machine, `mach`,  in its current state",
 
     "machine"      =>
     "`x` is the training machine in its current state")
