@@ -10,6 +10,9 @@ export IteratedModel
 const CONTROLS = vcat(IterationControl.CONTROLS,
                       [:WithIterationsDo,
                        :WithEvaluationDo,
+                       :WithFittedParamsDo,
+                       :WithReportDo,
+                       :WithMachineDo,
                        :CycleLearningRate])
 
 const TRAINING_CONTROLS = [:Step, ]
