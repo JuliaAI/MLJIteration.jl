@@ -7,7 +7,7 @@ using ..DummyModel
 using IterationControl
 const IC = IterationControl
 
-X, y = make_dummy(N=8);
+const X, y = make_dummy(N=8);
 
 @testset "WithIterationsDo" begin
     v = Int[]
@@ -110,6 +110,57 @@ resampler = MLJBase.Resampler(model=DummyIterativeModel(n=0),
     @test IC.takedown(c, 0, state) ==
         (done = true,
          log="foo")
+end
+
+# No need to re-test all logic for other simple immutable controls, as
+# defined by same code using metaprogramming. Some integration tests
+# should suffice.
+
+const EXT_GIVEN_STR = Dict(
+    "fitted_params" => fitted_params,
+    "report"        => report,
+    "machine"       => identity)
+
+# some operation that converts the thing being extracted into a
+# number, for comparisons:
+const PROJECTION_GIVEN_STR = Dict(
+    "fitted_params" => fp -> fp.fitresult['c'].avg,
+    "report"        => rep -> first(first(rep)),
+    "machine"       => mach -> first(first(report(mach))))
+
+const N = 20
+
+@testset "integration tests for some simple non-mutating controls" begin
+    for str in keys(EXT_GIVEN_STR)
+        C = MLJIteration.NAME_GIVEN_STR[str]
+        quote
+            # by hand:
+            trace_by_hand = []
+            for n in 1:N
+                local model = DummyIterativeModel(n=n)
+                local mach = machine(model, X, y)
+                fit!(mach, verbosity=0)
+                t = mach |> EXT_GIVEN_STR[$str] |> PROJECTION_GIVEN_STR[$str]
+                push!(trace_by_hand, t)
+            end
+
+            # with iteration control:
+            trace = []
+            model = DummyIterativeModel()
+            c = $C(x -> push!(trace, PROJECTION_GIVEN_STR[$str](x)))
+            controls = [Step(1), c, NumberLimit(N)]
+            iterated_model = IteratedModel(model=model,
+                                           resampling=nothing,
+                                           measure=mae,
+                                           controls=controls,
+                                           retrain=false)
+            mach = machine(iterated_model, X, y)
+            fit!(mach, verbosity=0)
+
+            # compare:
+            @test trace == trace_by_hand
+        end |> eval
+    end
 end
 
 @testset "CycleLearningRate" begin

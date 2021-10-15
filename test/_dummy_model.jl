@@ -149,9 +149,9 @@ MMI.training_losses(::DummyIterativeModel, report) = report.training_losses
 
 MMI.supports_training_losses(::Type{<:DummyIterativeModel}) = true
 MMI.input_scitype(::Type{<:DummyIterativeModel}) =
-    AbstractVector{<:MMI.ScientificTypes.Finite}
+    AbstractVector{<:MMI.Finite}
 MMI.target_scitype(::Type{<:DummyIterativeModel}) =
-    AbstractVector{<:MMI.ScientificTypes.Continuous}
+    AbstractVector{<:MMI.Continuous}
 
 
 # # FOR SYTHESIZING DATA FOR USE WITH DUMMY MODEL
