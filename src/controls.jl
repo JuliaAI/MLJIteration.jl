@@ -172,3 +172,90 @@ function IterationControl.update!(control::CycleLearningRate,
                                    r)
     return (n = n + 1, learning_rates = rates)
 end
+
+
+# # MORE CONTROLS
+
+const EXTRACTOR_GIVEN_STR = Dict(
+    "fitted_params" => :(fitted_params(ic_model.machine)),
+    "report"        => :(report(ic_model.machine)),
+    "machine"       => :(ic_model.machine))
+
+# maps "fitted_params" to ":WithFittedParamsDo":
+_control_name(str) = string("With",
+                            join(uppercasefirst.(split(str, "_"))),
+                            "Do") |> Symbol
+
+const NAME_GIVEN_STR =
+    Dict([str=>_control_name(str) for str in keys(EXTRACTOR_GIVEN_STR)]...)
+
+const DOC_GIVEN_STR = Dict(
+    "fitted_params" =>
+    "`p = fitted_params(mach)` is the fitted parameters "*
+    "of the training machine in its current state",
+
+    "report"       =>
+    "`p = report(mach)` is the report associated with the training "*
+    "machine in its current state",
+
+    "machine"      =>
+    "`p` is the training machine in its current state")
+
+for str in keys(EXTRACTOR_GIVEN_STR) # eg, "fitted_params"
+    sym = Symbol(str)                # eg, :fitted_params
+    C = NAME_GIVEN_STR[str]          # eg, :WithFittedParamsDo
+    C_str = string(C)
+    doc = DOC_GIVEN_STR[str]         # eg, "`p` is the training machine..."
+    extractor = EXTRACTOR_GIVEN_STR[str]
+
+    quote
+        struct $C{F<:Function}
+            f::F
+            stop_if_true::Bool
+            stop_message::Union{String,Nothing}
+        end
+
+        # constructor:
+        $C(f::Function;
+           stop_if_true=false,
+           stop_message=nothing) = $C(f, stop_if_true, stop_message)
+        $C(; f=p->@info("$($str): $p"), kwargs...) =
+            $C(f, kwargs...)
+
+        IterationControl.@create_docs(
+        $C,
+        header="$($C_str)(f=p->@info(\"$($str): \$p\"), "*
+            "stop_if_true=false, "*
+            "stop_message=nothing)",
+        example="$($C_str)(p->put!(my_channel, p))",
+        body="Call `f(p)`, where $($doc). "*
+            "If `stop_if_true` is `true`, then trigger an early stop "*
+            "if the value returned by `f` is `true`, logging the "*
+            "`stop_message` if specified. ")
+
+        function IterationControl.update!(c::$C,
+                                          ic_model,
+                                          verbosity,
+                                          n,
+                                          state...)
+            p = $extractor
+            r = c.f(p)
+            done = (c.stop_if_true && r isa Bool && r) ? true : false
+            return (done = done, $sym = p)
+        end
+
+        IterationControl.done(c::$C, state) = state.done
+
+        function IterationControl.takedown(c::$C, verbosity, state)
+            if state.done
+                message = c.stop_message === nothing ?
+                    "Stop triggered by a `$($C_str)` control. " :
+                    c.stop_message
+                verbosity > 0 && @info message
+                return (done = true, log = message)
+            else
+                return (done = false, log = "")
+            end
+        end
+    end |> eval
+end
