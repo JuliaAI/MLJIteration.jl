@@ -1,11 +1,12 @@
-# # SIMPLE NON-MUTATING CONTROLS
+# # SIMPLE CONTROLS
 
 const EXTRACTOR_GIVEN_STR = Dict(
     "iterations"    => :(ic_model.n_iterations),
     "evaluation"    => :(ic_model.evaluation),
     "fitted_params" => :(fitted_params(ic_model.machine)),
     "report"        => :(report(ic_model.machine)),
-    "machine"       => :(ic_model.machine))
+    "machine"       => :(ic_model.machine),
+    "model"         => :(ic_model.machine.model))
 
 # maps "fitted_params" to ":WithFittedParamsDo":
 _control_name(str) = string("With",
@@ -34,7 +35,12 @@ const DOC_GIVEN_STR = Dict(
     "machine, `mach`,  in its current state",
 
     "machine"      =>
-    "`x` is the training machine in its current state")
+    "`x` is the training machine in its current state",
+
+    "model" =>
+    "`x` is the model associated with the "*
+    "training machine; `f` may mutate `x`, as in "*
+    "`f(x) = (x.learning_rate *= 0.9)`")
 
 for str in keys(EXTRACTOR_GIVEN_STR) # eg, "fitted_params"
     sym = Symbol(str)                # eg, :fitted_params
