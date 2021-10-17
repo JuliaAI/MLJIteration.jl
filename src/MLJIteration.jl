@@ -13,6 +13,7 @@ const CONTROLS = vcat(IterationControl.CONTROLS,
                        :WithFittedParamsDo,
                        :WithReportDo,
                        :WithMachineDo,
+                       :WithModelDo,
                        :CycleLearningRate])
 
 const TRAINING_CONTROLS = [:Step, ]
