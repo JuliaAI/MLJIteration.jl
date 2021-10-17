@@ -112,25 +112,28 @@ resampler = MLJBase.Resampler(model=DummyIterativeModel(n=0),
          log="foo")
 end
 
-# No need to re-test all logic for other simple immutable controls, as
+# No need to re-test all logic for other simple controls, as
 # defined by same code using metaprogramming. Some integration tests
 # should suffice.
 
+# functions accessing the training machine:
 const EXT_GIVEN_STR = Dict(
     "fitted_params" => fitted_params,
     "report"        => report,
-    "machine"       => identity)
+    "machine"       => identity,
+    "model"         => m->m.model)
 
 # some operation that converts the thing being extracted into a
 # number, for comparisons:
 const PROJECTION_GIVEN_STR = Dict(
     "fitted_params" => fp -> fp.fitresult['c'].avg,
     "report"        => rep -> first(first(rep)),
-    "machine"       => mach -> first(first(report(mach))))
+    "machine"       => mach -> first(first(report(mach))),
+    "model"         => model -> model.learning_rate)
 
 const N = 20
 
-@testset "integration tests for some simple non-mutating controls" begin
+@testset "integration tests for some simple controls" begin
     for str in keys(EXT_GIVEN_STR)
         C = MLJIteration.NAME_GIVEN_STR[str]
         quote
