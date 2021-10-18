@@ -167,3 +167,50 @@ function IterationControl.update!(control::CycleLearningRate,
 end
 
 
+
+# # Exponential Decay Learning Rate
+struct ExponentialLearningRate{F<:AbstractFloat}
+    initial_rate::F
+    decay_steps::Int
+    decay_rate::F
+    step_max::Int
+    learning_rate_parameter::Union{Symbol,Expr}
+end
+
+# constructor
+ExponentialLearningRate(; initial_rate=0.1,
+                        decay_steps=100,
+                        decay_rate=0.5,
+                        step_max=100,
+                        learning_rate_parameter=:(optimiser.η)) where T<:Real =
+                            ExponentialLearningRate(initial_rate,
+                                                    decay_steps,
+                                                    decay_rate,
+                                                    step_max,
+                                                    learning_rate_parameter
+                                                    )
+
+
+function IterationControl.update!(control::ExponentialLearningRate,
+                                  wrapper,
+                                  verbosity,
+                                  ncycles,
+                                  state= (n=0,)
+                                  )
+    # fetch current iteration
+    n = state.n
+    # only update before we exceed step_max
+    if n<control.step_max
+        r = control.initial_rate * control.decay_rate^(n/control.decay_steps)
+        MLJBase.recursive_setproperty!(wrapper.model,
+                                      control.learning_rate_parameter,
+                                      r
+                                       )
+        verbosity > 1 && @info "learning rate: $r"
+    end
+    # update state with new iteration number
+    return (n = n+1,)
+end
+
+
+
