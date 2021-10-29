@@ -1,7 +1,7 @@
 name = "MLJIteration"
 uuid = "614be32b-d00c-4edb-bd02-1eb411ab5e55"
 authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
-version = "0.3.3"
+version = "0.4.0"
 
 [deps]
 IterationControl = "b3c1a2ee-3fec-4384-bf48-272ea71de57c"
@@ -9,7 +9,7 @@ MLJBase = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
-IterationControl = "0.4, 0.5"
+IterationControl = "0.5"
 MLJBase = "0.18.8"
 julia = "1"
 
