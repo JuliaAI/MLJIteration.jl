@@ -10,7 +10,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
 IterationControl = "0.5"
-MLJBase = "0.18.8"
+MLJBase = "0.18.8, 0.19"
 julia = "1"
 
 [extras]
