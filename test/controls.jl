@@ -143,7 +143,7 @@ const N = 20
                 local model = DummyIterativeModel(n=n)
                 local mach = machine(model, X, y)
                 fit!(mach, verbosity=0)
-                t = mach |> EXT_GIVEN_STR[$str] |> PROJECTION_GIVEN_STR[$str]
+                t = PROJECTION_GIVEN_STR[$str](mach |> EXT_GIVEN_STR[$str])
                 push!(trace_by_hand, t)
             end
 
