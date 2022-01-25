@@ -11,7 +11,8 @@ struct FooBar <: MLJBase.Deterministic end
 
 @testset "constructors" begin
     model = DummyIterativeModel()
-    @test_throws MLJIteration.ERR_NO_MODEL IteratedModel()
+    @test_throws MLJIteration.ERR_TOO_MANY_ARGUMENTS IteratedModel(1, 2)
+    @test_throws MLJIteration.ERR_MODEL_UNSPECIFIED IteratedModel()
     @test_throws MLJIteration.ERR_NOT_SUPERVISED IteratedModel(model=Foo())
     @test_throws MLJIteration.ERR_NOT_SUPERVISED IteratedModel(model=Int)
     @test_throws MLJIteration.ERR_NEED_MEASURE IteratedModel(model=Bar())
@@ -25,6 +26,7 @@ struct FooBar <: MLJBase.Deterministic end
     @test iterated_model.measure == RootMeanSquaredError()
     @test iterated_model.iteration_parameter == :n
     @test_logs IteratedModel(model=model, measure=mae, iteration_parameter=:n)
+    @test_logs IteratedModel(model, measure=mae, iteration_parameter=:n)
 
     @test_logs IteratedModel(model=model, resampling=nothing, iteration_parameter=:n)
 
