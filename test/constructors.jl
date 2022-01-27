@@ -7,21 +7,28 @@ using Test
 
 struct Foo <: MLJBase.Unsupervised end
 struct Bar <: MLJBase.Deterministic end
+struct FooBar <: MLJBase.Deterministic end
 
 @testset "constructors" begin
     model = DummyIterativeModel()
-    @test_throws MLJIteration.ERR_NO_MODEL IteratedModel()
+    @test_throws MLJIteration.ERR_TOO_MANY_ARGUMENTS IteratedModel(1, 2)
+    @test_throws MLJIteration.ERR_MODEL_UNSPECIFIED IteratedModel()
     @test_throws MLJIteration.ERR_NOT_SUPERVISED IteratedModel(model=Foo())
     @test_throws MLJIteration.ERR_NOT_SUPERVISED IteratedModel(model=Int)
     @test_throws MLJIteration.ERR_NEED_MEASURE IteratedModel(model=Bar())
     @test_throws MLJIteration.ERR_NEED_PARAMETER IteratedModel(model=Bar(),
-                                                                measure=rms)
-    iterated_model = @test_logs((:info, r"No measure"),
+                                                               measure=rms)
+    iterated_model = @test_logs((:info, "No measure specified. Setting "*
+                                 "measure=RootMeanSquaredError(). No "*
+                                 "iteration parameter specified. "*
+                                 "Setting iteration_parameter=:(n). "),
                IteratedModel(model=model))
     @test iterated_model.measure == RootMeanSquaredError()
-    @test_logs IteratedModel(model=model, measure=mae)
+    @test iterated_model.iteration_parameter == :n
+    @test_logs IteratedModel(model=model, measure=mae, iteration_parameter=:n)
+    @test_logs IteratedModel(model, measure=mae, iteration_parameter=:n)
 
-    @test_logs IteratedModel(model=model, resampling=nothing)
+    @test_logs IteratedModel(model=model, resampling=nothing, iteration_parameter=:n)
 
     @test_logs((:info, r"`resampling` must be"),
                IteratedModel(model=model,
@@ -34,12 +41,18 @@ struct Bar <: MLJBase.Deterministic end
                              measure=rms))
     @test_logs IteratedModel(model=model,
                              resampling=[([1, 2], [3, 4]),],
-                             measure=rms)
+                             measure=rms,
+                             iteration_parameter=:n)
 
     @test_throws(MLJIteration.ERR_MISSING_TRAINING_CONTROL,
                  IteratedModel(model=model,
                                resampling=nothing,
                                controls=[Patience(), InvalidValue()]))
+
+    @test_throws(MLJIteration.err_bad_iteration_parameter(:goo),
+                 IteratedModel(model=model,
+                               measure=mae,
+                               iteration_parameter=:goo))
 end
 
 end
