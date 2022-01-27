@@ -51,11 +51,7 @@ end
 function MLJBase.fit(iterated_model::EitherIteratedModel, verbosity, data...)
 
     model = deepcopy(iterated_model.model)
-
-     # get name of iteration parameter:
-     _iter = MLJBase.iteration_parameter(model)
-    iteration_param = _iter === nothing ?
-        iterated_model.iteration_parameter : _iter
+    iteration_param = iterated_model.iteration_parameter
 
     # instantiate `train_mach`:
     mach = if iterated_model.resampling === nothing

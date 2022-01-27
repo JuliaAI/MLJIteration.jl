@@ -1,8 +1,3 @@
-const ERR_MISSING_TRAINING_CONTROL =
-    ArgumentError("At least one control must be a training control "*
-                  "(have type `$TrainingControl`) or be a "*
-                  "custom control that calls IterationControl.train!. ")
-
 const IterationResamplingTypes =
     Union{Holdout,Nothing,MLJBase.TrainTestPairs}
 
@@ -37,11 +32,15 @@ mutable struct ProbabilisticIteratedModel{M<:Probabilistic} <: MLJBase.Probabili
     cache::Bool
 end
 
+const ERR_MISSING_TRAINING_CONTROL =
+    ArgumentError("At least one control must be a training control "*
+                  "(have type `$TrainingControl`) or be a "*
+                  "custom control that calls IterationControl.train!. ")
+
+const ERR_TOO_MANY_ARGUMENTS =
+    ArgumentError("At most one non-keyword argument allowed. ")
 const EitherIteratedModel{M} =
     Union{DeterministicIteratedModel{M},ProbabilisticIteratedModel{M}}
-
-const ERR_NO_MODEL =
-    ArgumentError("You need to specify model=... ")
 const ERR_NOT_SUPERVISED =
     ArgumentError("Only `Deterministic` and `Probabilistic` "*
                   "model types supported.")
@@ -53,6 +52,13 @@ const ERR_NEED_PARAMETER =
                   "parameter. Please specify `iteration_parameter=...`. This "*
                   "must be a `Symbol` or, in the case of a nested parameter, "*
                   "an `Expr` (as in `booster.nrounds`). ")
+const ERR_MODEL_UNSPECIFIED = ArgumentError(
+"Expecting atomic model as argument, or as keyword argument `model=...`, "*
+    "but neither detected. ")
+
+
+err_bad_iteration_parameter(p) =
+    ArgumentError("Model to be iterated does not have :($p) as an iteration parameter. ")
 
 """
     IteratedModel(model=nothing,
@@ -169,7 +175,8 @@ updated to the last value used in the preceding `fit!(mach)` call. Then
 repeated application of the (updated) controls begin anew.
 
 """
-function IteratedModel(; model=nothing,
+function IteratedModel(args...;
+                       model=nothing,
                        control=CONTROLS_DEFAULT,
                        controls=control,
                        resampling=MLJBase.Holdout(),
@@ -183,10 +190,18 @@ function IteratedModel(; model=nothing,
                        iteration_parameter=nothing,
                        cache=true)
 
-    model == nothing && throw(ERR_NO_MODEL)
+    length(args) < 2 || throw(ArgumentError("At most one non-keyword argument allowed. "))
+    if length(args) === 1
+        atom = first(args)
+        model === nothing ||
+            @warn "Using `model=$atom`. Ignoring specification `model=$model`. "
+    else
+        model === nothing && throw(ERR_MODEL_UNSPECIFIED)
+        atom = model
+    end
 
-    if model isa Deterministic
-        iterated_model = DeterministicIteratedModel(model,
+    if atom isa Deterministic
+        iterated_model = DeterministicIteratedModel(atom,
                                                     controls,
                                                     resampling,
                                                     measure,
@@ -197,8 +212,8 @@ function IteratedModel(; model=nothing,
                                                     check_measure,
                                                     iteration_parameter,
                                                     cache)
-    elseif model isa Probabilistic
-        iterated_model = ProbabilisticIteratedModel(model,
+    elseif atom isa Probabilistic
+        iterated_model = ProbabilisticIteratedModel(atom,
                                                     controls,
                                                     resampling,
                                                     measure,
@@ -220,6 +235,8 @@ function IteratedModel(; model=nothing,
 
 end
 
+
+
 function MLJBase.clean!(iterated_model::EitherIteratedModel)
     message = ""
     if iterated_model.measure === nothing &&
@@ -232,9 +249,21 @@ function MLJBase.clean!(iterated_model::EitherIteratedModel)
             "Setting measure=$(iterated_model.measure). "
         end
     end
-    iterated_model.iteration_parameter === nothing &&
-        iteration_parameter(iterated_model.model) === nothing &&
-        throw(ERR_NEED_PARAMETER)
+    if iterated_model.iteration_parameter === nothing
+        iterated_model.iteration_parameter = iteration_parameter(iterated_model.model)
+        if iterated_model.iteration_parameter === nothing
+            throw(ERR_NEED_PARAMETER)
+        else
+            message *= "No iteration parameter specified. "*
+                "Setting iteration_parameter=:($(iterated_model.iteration_parameter)). "
+        end
+    end
+    try
+        MLJBase.recursive_getproperty(iterated_model.model,
+                                      iterated_model.iteration_parameter)
+    catch
+        throw(err_bad_iteration_parameter(iterated_model.iteration_parameter))
+    end
 
     resampling = iterated_model.resampling
 

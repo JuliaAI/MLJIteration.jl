@@ -52,7 +52,7 @@ end
 # overloading `expose`- for `resampling === nothing`:
 IterationControl.expose(ic_model::ICModel) = ic_model.mach
 
-# overloading `expose`- for `resampling isa Holdout` or 
+# overloading `expose`- for `resampling isa Holdout` or
 # other resampling strategy:
 IterationControl.expose(ic_model::ICModel{<:Machine{<:Resampler}}) =
     MLJBase.fitted_params(ic_model.mach).machine
