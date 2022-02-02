@@ -18,23 +18,22 @@ struct FooBar <: MLJBase.Deterministic end
     @test_throws MLJIteration.ERR_NEED_MEASURE IteratedModel(model=Bar())
     @test_throws MLJIteration.ERR_NEED_PARAMETER IteratedModel(model=Bar(),
                                                                measure=rms)
-    iterated_model = @test_logs((:info, "No measure specified. Setting "*
-                                 "measure=RootMeanSquaredError(). No "*
-                                 "iteration parameter specified. "*
-                                 "Setting iteration_parameter=:(n). "),
-               IteratedModel(model=model))
-    @test iterated_model.measure == RootMeanSquaredError()
-    @test iterated_model.iteration_parameter == :n
-    @test_logs IteratedModel(model=model, measure=mae, iteration_parameter=:n)
+    iterated_model = @test_logs(IteratedModel(model=model))
+    @test iterated_model.measure === nothing
+    @test iterated_model.iteration_parameter === nothing
+    iterated_model = @test_logs(
+    IteratedModel(model=model, measure=mae, iteration_parameter=:n)
+    )
+    @test iterated_model.measure == mae
     @test_logs IteratedModel(model, measure=mae, iteration_parameter=:n)
 
     @test_logs IteratedModel(model=model, resampling=nothing, iteration_parameter=:n)
 
-    @test_logs((:info, r"`resampling` must be"),
+    @test_logs((:warn, MLJIteration.WARN_POOR_RESAMPLING_CHOICE),
                IteratedModel(model=model,
                              resampling=CV(),
                              measure=rms))
-    @test_logs((:info, r"A `resampling` vector may contain"),
+    @test_logs((:warn, MLJIteration.WARN_POOR_CHOICE_OF_PAIRS),
                IteratedModel(model=model,
                              resampling=[([1, 2], [3, 4]),
                                          ([3, 4], [1, 2])],
@@ -54,6 +53,7 @@ struct FooBar <: MLJBase.Deterministic end
                                measure=mae,
                                iteration_parameter=:goo))
 end
+
 
 end
 

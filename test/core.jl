@@ -4,6 +4,7 @@ using Test
 using MLJIteration
 using IterationControl
 using MLJBase
+using MLJModelInterface
 using ..DummyModel
 
 X, y = make_dummy(N=20)
@@ -30,13 +31,21 @@ model = DummyIterativeModel(n=0)
 
     # using IteratedModel wrapper:
     imodel = IteratedModel(model=model,
-                           resampling=nothing,
                            controls=controls,
-                           measure=rms)
+                           resampling=nothing)
     mach = machine(imodel, X, y)
-    fit!(mach, verbosity=0)
+    @test_logs((:info, r"Training"),
+               (:info, MLJIteration.info_unspecified_iteration_parameter(:n)),
+               (:info, r"final loss"),
+               (:info, r"final training loss"),
+               (:info, r"Stop"),
+               (:info, r"Total"),
+               fit!(mach, verbosity=1))
+    imodel.resampling = nothing
+    @test_logs fit!(mach, verbosity=0)
+
     losses2 = report(mach).model_report.training_losses
-    yhat2 = predict(mach, X)
+    yhat2 = predict(mach, X);
     @test imodel.model == DummyIterativeModel(n=0) # hygeine check
 
     # compare:
@@ -65,8 +74,8 @@ model = DummyIterativeModel(n=0)
                fit!(mach))
     @test report(mach).n_iterations == i + 2
 
-    # warm restart when changing model (trains one more iteration
-    # because stopping control comes after `Step(...)`:
+    # warm restart when changing iteration parameter (trains one more
+    # iteration because stopping control comes after `Step(...)`):
     imodel.model.n = 1
     @test_logs((:info, r"Updating"),
                noise(1)...,
@@ -84,6 +93,7 @@ model = DummyIterativeModel(n=0)
                                         stop_if_true=true),
                        Info(x->"43")]
     @test_logs((:info, r"Updating"),
+               (:info, MLJIteration.info_unspecified_iteration_parameter(:n)),
                noise(5)...,
                (:info, r""),
                (:info, r""),
@@ -95,7 +105,6 @@ end
 
 @testset "integration: resampling=Holdout()" begin
 
-    X, y = make_dummy(N=100)
     controls=[Step(2), Patience(4), TimeLimit(0.001)]
 
     # using IterationControl.jl directly:
@@ -108,25 +117,32 @@ end
         fit!(mach, rows=train, verbosity=0)
     end
     function IterationControl.loss(mach::Machine{<:DummyIterativeModel})
-        mlj_model = mach.model
         yhat = predict(mach, rows=test)
         return mae(yhat, y[test]) |> mean
     end
     IterationControl.train!(mach, controls...; verbosity=0)
-    losses1 = report(mach).training_losses
-    yhat1 = predict(mach, X[test])
+    losses1 = report(mach).training_losses;
+    yhat1 = predict(mach, X[test]);
     niters = mach.model.n
     @test niters == length(losses1)
 
     # using IteratedModel wrapper:
     imodel = IteratedModel(model=model,
                            resampling=Holdout(fraction_train=0.7),
-                           controls=controls,
-                           measure=mae)
+                           controls=controls)
     mach = machine(imodel, X, y)
-    fit!(mach, verbosity=0)
-    losses2 = report(mach).model_report.training_losses
-    yhat2 = predict(mach, X[test])
+    @test_logs((:info, r"Training"),
+               (:info, MLJIteration.info_unspecified_iteration_parameter(:n)),
+               (:info, MLJIteration.info_unspecified_measure(rms)),
+               (:info, r"final loss"),
+               (:info, r"final train"),
+               (:info, r"Stop"),
+               (:info, r"Total"),
+               fit!(mach, verbosity=1))
+    imodel.measure = mae
+    @test_logs fit!(mach, verbosity=0)
+    losses2 = report(mach).model_report.training_losses;
+    yhat2 = predict(mach, X[test]);
 
     # compare:
     @test losses1 ≈ losses2
@@ -203,6 +219,23 @@ end
     @test yhat1 ≈ yhat2
     @test !(yhat3 ≈ yhat2)
 
+end
+
+@testset "issue #40" begin
+    # change trait to an incorrect value:
+    MLJModelInterface.iteration_parameter(::Type{<:DummyIterativeModel}) = :junk
+    @test iteration_parameter(model) == :junk
+
+    # user specifies correct value:
+    iterated_model = IteratedModel(model, measure=mae, iteration_parameter=:n)
+    mach = machine(iterated_model, X, y)
+
+    # and model still runs:
+    fit!(mach, verbosity=0)
+
+    # change trait back:
+    MLJModelInterface.iteration_parameter(::Type{<:DummyIterativeModel}) = :n
+    @test iteration_parameter(model) == :n
 end
 
 end
