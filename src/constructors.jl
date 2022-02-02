@@ -56,6 +56,17 @@ const ERR_MODEL_UNSPECIFIED = ArgumentError(
 "Expecting atomic model as argument, or as keyword argument `model=...`, "*
     "but neither detected. ")
 
+const WARN_POOR_RESAMPLING_CHOICE =
+    "Training could be very slow unless "*
+    "`resampling` is `Holdout(...)`, `nothing`, or "*
+    "a vector of the form `[(train, test),]`, where `train` and `test` "*
+    "are valid row indices for the data, as in "*
+    "`resampling = [(1:100, 101:150),]`. "
+
+const WARN_POOR_CHOICE_OF_PAIRS =
+    "Training could be very slow unless you limit the number of `(train, test)` pairs "*
+    "to one, as in resampling = [(1:100, 101:150),]. Alternatively, "*
+    "use a `Holdout` resampling strategy. "
 
 err_bad_iteration_parameter(p) =
     ArgumentError("Model to be iterated does not have :($p) as an iteration parameter. ")
@@ -229,56 +240,40 @@ function IteratedModel(args...;
     end
 
     message = clean!(iterated_model)
-    isempty(message) || @info message
+    isempty(message) || @warn message
 
     return iterated_model
 
 end
 
-
-
 function MLJBase.clean!(iterated_model::EitherIteratedModel)
     message = ""
-    if iterated_model.measure === nothing &&
+    measure = iterated_model.measure
+    if measure === nothing &&
         iterated_model.resampling !== nothing
-        iterated_model.measure = MLJBase.default_measure(iterated_model.model)
-        if iterated_model.measure === nothing
-            throw(ERR_NEED_MEASURE)
-        else
-            message *= "No measure specified. "*
-            "Setting measure=$(iterated_model.measure). "
-        end
+        measure = MLJBase.default_measure(iterated_model.model)
+        measure === nothing && throw(ERR_NEED_MEASURE)
     end
-    if iterated_model.iteration_parameter === nothing
-        iterated_model.iteration_parameter = iteration_parameter(iterated_model.model)
-        if iterated_model.iteration_parameter === nothing
-            throw(ERR_NEED_PARAMETER)
-        else
-            message *= "No iteration parameter specified. "*
-                "Setting iteration_parameter=:($(iterated_model.iteration_parameter)). "
-        end
+    iter = deepcopy(iterated_model.iteration_parameter)
+    if iter === nothing
+        iter = iteration_parameter(iterated_model.model)
+        iter === nothing && throw(ERR_NEED_PARAMETER)
     end
     try
         MLJBase.recursive_getproperty(iterated_model.model,
-                                      iterated_model.iteration_parameter)
+                                      iter)
     catch
-        throw(err_bad_iteration_parameter(iterated_model.iteration_parameter))
+        throw(err_bad_iteration_parameter(iter))
     end
 
     resampling = iterated_model.resampling
 
-    resampling isa IterationResamplingTypes || begin
-        message *= "`resampling` must be `nothing`, `Holdout(...)`, or "*
-        "a vector of the form `[(train, test),]`, where `train` and `test` "*
-        "are valid row indices for the data, as in "*
-        "`resampling = [([1, 2, 3], [4, 5]),]`. "
+    if !(resampling isa IterationResamplingTypes)
+        message *= WARN_POOR_RESAMPLING_CHOICE
     end
 
-    if resampling isa MLJBase.TrainTestPairs
-        length(resampling) == 1 || begin
-            message *= "A `resampling` vector may contain only one "*
-                "`(train, test)` pair. "
-        end
+    if resampling isa MLJBase.TrainTestPairs && length(resampling) !== 1
+        message *= WARN_POOR_CHOICE_OF_PAIRS
     end
 
     training_control_candidates = filter(iterated_model.controls) do c
