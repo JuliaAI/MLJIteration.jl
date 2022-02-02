@@ -48,10 +48,37 @@ end
 
 # # IMPLEMENTATION OF MLJ MODEL INTERFACE
 
+const info_unspecified_iteration_parameter(iter) =
+    "No iteration parameter specified. "*
+    "Using `iteration_parameter=:($iter)`. "
+
+const info_unspecified_measure(measure) =
+    "No measure specified. "*
+    "Using `measure=$measure`. "
+
+function _actual_iteration_parameter(iterated_model, verbosity)
+    if iterated_model.iteration_parameter === nothing
+        iter = iteration_parameter(iterated_model.model)
+        verbosity < 1 || @info info_unspecified_iteration_parameter(iter)
+        return iter
+    end
+    return iterated_model.iteration_parameter
+end
+
+function _actual_measure(iterated_model, verbosity)
+    if iterated_model.measure === nothing && iterated_model.resampling !== nothing
+        measure = MLJBase.default_measure(iterated_model.model)
+        verbosity < 1 || @info info_unspecified_measure(measure)
+        return measure
+    end
+    return iterated_model.measure
+end
+
 function MLJBase.fit(iterated_model::EitherIteratedModel, verbosity, data...)
 
     model = deepcopy(iterated_model.model)
-    iteration_param = iterated_model.iteration_parameter
+    iteration_param = _actual_iteration_parameter(iterated_model, verbosity)
+    measure = _actual_measure(iterated_model, verbosity)
 
     # instantiate `train_mach`:
     mach = if iterated_model.resampling === nothing
@@ -59,7 +86,7 @@ function MLJBase.fit(iterated_model::EitherIteratedModel, verbosity, data...)
     else
         resampler = MLJBase.Resampler(model=model,
                                   resampling=iterated_model.resampling,
-                                  measure=iterated_model.measure,
+                                  measure=measure,
                                   weights=iterated_model.weights,
                                   class_weights=iterated_model.class_weights,
                                   operation=iterated_model.operation,
