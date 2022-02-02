@@ -61,11 +61,11 @@ const WARN_POOR_RESAMPLING_CHOICE =
     "`resampling` is `Holdout(...)`, `nothing`, or "*
     "a vector of the form `[(train, test),]`, where `train` and `test` "*
     "are valid row indices for the data, as in "*
-    "`resampling = [([1, 2, 3], [4, 5]),]`. "
+    "`resampling = [(1:100, 101:150),]`. "
 
 const WARN_POOR_CHOICE_OF_PAIRS =
     "Training could be very slow unless you limit the number of `(train, test)` pairs "*
-    "to one, as in resampling = [([1, 2, 3], [4, 5]),]. Alternatively, "*
+    "to one, as in resampling = [(1:100, 101:150),]. Alternatively, "*
     "use a `Holdout` resampling strategy. "
 
 err_bad_iteration_parameter(p) =
