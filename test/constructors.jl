@@ -54,6 +54,7 @@ struct FooBar <: MLJBase.Deterministic end
                                iteration_parameter=:goo))
 end
 
+
 end
 
 true

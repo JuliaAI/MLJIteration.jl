@@ -4,6 +4,7 @@ using Test
 using MLJIteration
 using IterationControl
 using MLJBase
+using MLJModelInterface
 using ..DummyModel
 
 X, y = make_dummy(N=20)
@@ -218,6 +219,23 @@ end
     @test yhat1 ≈ yhat2
     @test !(yhat3 ≈ yhat2)
 
+end
+
+@testset "issue #40" begin
+    # change trait to an incorrect value:
+    MLJModelInterface.iteration_parameter(::Type{<:DummyIterativeModel}) = :junk
+    @test iteration_parameter(model) == :junk
+
+    # user specifies correct value:
+    iterated_model = IteratedModel(model, measure=mae, iteration_parameter=:n)
+    mach = machine(iterated_model, X, y)
+
+    # and model still runs:
+    fit!(mach, verbosity=0)
+
+    # change trait back:
+    MLJModelInterface.iteration_parameter(::Type{<:DummyIterativeModel}) = :n
+    @test iteration_parameter(model) == :n
 end
 
 end
