@@ -26,3 +26,7 @@ end
 @testset "traits" begin
     include("traits.jl")
 end
+
+@testset "serialization" begin
+    include("serialization.jl")
+end

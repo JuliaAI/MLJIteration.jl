@@ -1,11 +1,12 @@
 module MLJIteration
 
+using Serialization
 using MLJBase
 using IterationControl
 import IterationControl: debug, skip, composite
 import IterationControl: update!, done, takedown, train!
 
-export IteratedModel
+export IteratedModel, Save
 
 const CONTROLS = vcat(IterationControl.CONTROLS,
                       [:WithIterationsDo,
@@ -39,6 +40,7 @@ include("constructors.jl")
 include("traits.jl")
 include("ic_model.jl")
 include("core.jl")
+include("serialization.jl")
 
 
 
