@@ -40,7 +40,6 @@ include("constructors.jl")
 include("traits.jl")
 include("ic_model.jl")
 include("core.jl")
-include("serialization.jl")
 
 
 

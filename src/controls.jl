@@ -167,3 +167,41 @@ function IterationControl.update!(control::CycleLearningRate,
 end
 
 
+# # SAVE CONTROL
+struct Save
+    filename::String
+    method::Function
+end
+
+Save(filename; method=serialize) =
+    Save(filename, method)
+
+Save(;filename="machine.jls", method=serialize) = 
+    Save(filename, method)
+
+IterationControl.@create_docs(Save,
+             header="Save(filename=\"machine.jls\")",
+             example="Save(\"run3/machine.jls\")",
+             body="Save the current state of the machine being iterated to "*
+             "disk, using the provided `filename`, decorated with a number, "*
+             "as in \"run3/machine42.jls\". The default behaviour uses "*
+             "the Serialization module but this can be changed by setting "*
+             "the `method=save_fn(::String, ::Any)` argument where `save_fn` "*
+             "is any serialization method. "*
+             "For more on what is meant by \"the machine being iterated\", "*
+             "see [`IteratedModel`](@ref).")
+
+function IterationControl.update!(c::Save,
+                                  ic_model,
+                                  verbosity,
+                                  n,
+                                  state=(filenumber=0, ))
+    filenumber = state.filenumber + 1
+    root, suffix = splitext(c.filename)
+    filename = string(root, filenumber, suffix)
+    train_mach = IterationControl.expose(ic_model)
+    verbosity > 0 && @info "Saving \"$filename\". "
+    strain_mach = MLJBase.serializable(train_mach)
+    c.method(filename, strain_mach)
+    return (filenumber=filenumber, )
+end
