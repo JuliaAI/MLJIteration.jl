@@ -168,9 +168,9 @@ end
 
 
 # # SAVE CONTROL
-struct Save
+struct Save{F<:Function}
     filename::String
-    method::Function
+    method::F
 end
 
 Save(filename; method=serialize) =
