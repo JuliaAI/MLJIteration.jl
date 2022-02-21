@@ -12,21 +12,23 @@ MLJBase.package_url(::Type{<:EitherIteratedModel}) =
 MLJBase.package_license(::Type{<:EitherIteratedModel}) = "MIT"
 
 # inherited traits:
-for T in [:DeterministicIteratedModel, :ProbabilisticIteratedModel]
-    for trait in [:supports_weights,
-                  :supports_class_weights,
-                  :is_pure_julia,
-                  :input_scitype,
-                  :output_scitype,
-                  :target_scitype]
+for trait in [:supports_weights,
+              :supports_class_weights,
+              :is_pure_julia,
+              :input_scitype,
+              :output_scitype,
+              :target_scitype]
+    quote
+        # needed because traits are not always deducable from
+        # the type (eg, `target_scitype` and `Pipeline` models):
+        MLJBase.$trait(imodel::EitherIteratedModel) = $trait(imodel.model)
+    end |> eval
+    for T in [:DeterministicIteratedModel, :ProbabilisticIteratedModel]
         quote
             # try to get trait at level of types ("failure" here just
             # means falling back to `Unknown`):
             MLJBase.$trait(::Type{<:$T{M}}) where M = MLJBase.$trait(M)
-
-            # needed because traits are not always deducable from
-            # the type (eg, `target_scitype` and `Pipeline` models):
-            MLJBase.$trait(imodel::EitherIteratedModel) = $trait(imodel.model)
         end |> eval
     end
 end
+
