@@ -31,4 +31,3 @@ for trait in [:supports_weights,
         end |> eval
     end
 end
-
