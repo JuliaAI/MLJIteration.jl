@@ -6,7 +6,7 @@ using IterationControl
 import IterationControl: debug, skip, composite
 import IterationControl: update!, done, takedown, train!
 
-export IteratedModel, Save
+export IteratedModel
 
 const CONTROLS = vcat(IterationControl.CONTROLS,
                       [:WithIterationsDo,
@@ -15,7 +15,8 @@ const CONTROLS = vcat(IterationControl.CONTROLS,
                        :WithReportDo,
                        :WithMachineDo,
                        :WithModelDo,
-                       :CycleLearningRate])
+                       :CycleLearningRate,
+                       :Save])
 
 const TRAINING_CONTROLS = [:Step, ]
 
