@@ -4,7 +4,10 @@ using MLJIteration
 using MLJBase
 using Test
 using ..DummyModel
+using JLSO
+using Serialization
 using IterationControl
+
 const IC = IterationControl
 
 const X, y = make_dummy(N=8);
@@ -187,6 +190,47 @@ end
     @test model.learning_rate == 1.5
     state = IC.update!(c, m, 0, 3, state)
     @test model.learning_rate == 0.5
+end
+
+
+jlso_save(filename, mach) = JLSO.save(filename, :machine => mach)
+function jlso_machine(filename)
+    mach = JLSO.load(filename)[:machine]
+    MLJBase.restore!(mach)
+    return mach
+end
+
+@testset "Save" begin
+    # Test constructors
+    filename = "serialization_test.jls"
+    c_ = Save(filename)
+    c = Save(filename=filename)
+    @test c == c_
+    # Test control for Serialization `serialize` and JLSO `save`
+    for (save_fn,load_fn) in (serialize => MLJBase.machine, jlso_save => jlso_machine)
+        c = Save(filename, method=save_fn)
+        m = machine(DummyIterativeModel(n=2), X, y)
+        fit!(m, verbosity=0)
+        state = @test_logs((:info, "Saving \"serialization_test1.jls\". "),
+        IterationControl.update!(c, m, 2, 1))
+        @test state.filenumber == 1
+        m.model.n = 5
+        fit!(m, verbosity=0)
+        state = IterationControl.update!(c, m, 0, 2, state)
+        @test state.filenumber == 2
+        yhat = predict(IterationControl.expose(m), X);
+
+        deserialized_mach = load_fn("serialization_test2.jls")
+        yhat2 = predict(deserialized_mach, X)
+        @test yhat2 ≈ yhat
+
+        train_mach = machine(DummyIterativeModel(n=5), X, y)
+        fit!(train_mach, verbosity=0)
+        @test yhat ≈ predict(train_mach, X)
+
+        rm("serialization_test1.jls")
+        rm("serialization_test2.jls")
+    end
 end
 
 end
