@@ -1,5 +1,6 @@
 module MLJIteration
 
+using Serialization
 using MLJBase
 using IterationControl
 import IterationControl: debug, skip, composite
@@ -14,7 +15,8 @@ const CONTROLS = vcat(IterationControl.CONTROLS,
                        :WithReportDo,
                        :WithMachineDo,
                        :WithModelDo,
-                       :CycleLearningRate])
+                       :CycleLearningRate,
+                       :Save])
 
 const TRAINING_CONTROLS = [:Step, ]
 
