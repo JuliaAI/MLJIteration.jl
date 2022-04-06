@@ -1,9 +1,5 @@
 MLJBase.is_wrapper(::Type{<:EitherIteratedModel}) = true
 MLJBase.caches_data_by_default(::Type{<:EitherIteratedModel}) = false
-MLJBase.supports_weights(::Type{<:EitherIteratedModel{M}}) where M =
-    MLJBase.supports_weights(M)
-MLJBase.supports_class_weights(::Type{<:EitherIteratedModel{M}}) where M =
-    MLJBase.supports_class_weights(M)
 MLJBase.load_path(::Type{<:DeterministicIteratedModel}) =
     "MLJIteration.DeterministicIteratedModel"
 MLJBase.load_path(::Type{<:ProbabilisticIteratedModel}) =
@@ -14,11 +10,24 @@ MLJBase.package_uuid(::Type{<:EitherIteratedModel}) =
 MLJBase.package_url(::Type{<:EitherIteratedModel}) =
     "https://github.com/JuliaAI/MLJIteration.jl"
 MLJBase.package_license(::Type{<:EitherIteratedModel}) = "MIT"
-MLJBase.is_pure_julia(::Type{<:EitherIteratedModel{M}}) where {T,M} =
-    MLJBase.is_pure_julia(M)
-MLJBase.input_scitype(::Type{<:EitherIteratedModel{M}}) where {T,M} =
-    MLJBase.input_scitype(M)
-MLJBase.output_scitype(::Type{<:EitherIteratedModel{M}}) where {T,M} =
-    MLJBase.output_scitype(M)
-MLJBase.target_scitype(::Type{<:EitherIteratedModel{M}}) where {T,M} =
-    MLJBase.target_scitype(M)
+
+# inherited traits:
+for trait in [:supports_weights,
+              :supports_class_weights,
+              :is_pure_julia,
+              :input_scitype,
+              :output_scitype,
+              :target_scitype]
+    quote
+        # needed because traits are not always deducable from
+        # the type (eg, `target_scitype` and `Pipeline` models):
+        MLJBase.$trait(imodel::EitherIteratedModel) = $trait(imodel.model)
+    end |> eval
+    for T in [:DeterministicIteratedModel, :ProbabilisticIteratedModel]
+        quote
+            # try to get trait at level of types ("failure" here just
+            # means falling back to `Unknown`):
+            MLJBase.$trait(::Type{<:$T{M}}) where M = MLJBase.$trait(M)
+        end |> eval
+    end
+end
