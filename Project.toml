@@ -1,7 +1,7 @@
 name = "MLJIteration"
 uuid = "614be32b-d00c-4edb-bd02-1eb411ab5e55"
 authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
-version = "0.5.0"
+version = "0.5.1"
 
 [deps]
 IterationControl = "b3c1a2ee-3fec-4384-bf48-272ea71de57c"
