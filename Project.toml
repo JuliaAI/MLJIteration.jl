@@ -10,6 +10,6 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
 [compat]
-MLJBase = "0.20"
 IterationControl = "0.5"
+MLJBase = "0.20, 0.21"
 julia = "1.6"
