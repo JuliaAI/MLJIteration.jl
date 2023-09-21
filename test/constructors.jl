@@ -4,6 +4,7 @@ using MLJIteration
 using MLJBase
 using ..DummyModel
 using Test
+using StatisticalMeasures
 
 struct Foo <: MLJBase.Unsupervised end
 struct Bar <: MLJBase.Deterministic end
