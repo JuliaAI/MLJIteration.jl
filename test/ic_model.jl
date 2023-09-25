@@ -4,6 +4,7 @@ using Test
 using MLJIteration
 using MLJBase
 using IterationControl
+using StatisticalMeasures
 using ..DummyModel
 
 X, y = make_dummy(N=20)

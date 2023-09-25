@@ -4,6 +4,7 @@ using MLJBase
 using Test
 using MLJIteration
 using ..DummyModel
+using StatisticalMeasures
 
 model = DummyIterativeModel()
 imodel = IteratedModel(model=model, measure=mae)

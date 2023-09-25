@@ -5,6 +5,7 @@ using MLJIteration
 using IterationControl
 using MLJBase
 using MLJModelInterface
+using StatisticalMeasures
 using ..DummyModel
 
 X, y = make_dummy(N=20)
@@ -133,7 +134,7 @@ end
     mach = machine(imodel, X, y)
     @test_logs((:info, r"Training"),
                (:info, MLJIteration.info_unspecified_iteration_parameter(:n)),
-               (:info, MLJIteration.info_unspecified_measure(rms)),
+               (:info, MLJIteration.info_unspecified_measure(l2)),
                (:info, r"final loss"),
                (:info, r"final train"),
                (:info, r"Stop"),

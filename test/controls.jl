@@ -7,6 +7,7 @@ using ..DummyModel
 using JLSO
 using Serialization
 using IterationControl
+using StatisticalMeasures
 
 const IC = IterationControl
 
@@ -62,7 +63,7 @@ end
 
 resampler = MLJBase.Resampler(model=DummyIterativeModel(n=0),
                               resampling=Holdout(),
-                              measure=[MLJBase.mae, MLJBase.rms])
+                              measure=[mae, rms])
 
 @testset "WithEvaluationDo" begin
     v = Any[]
