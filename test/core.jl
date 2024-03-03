@@ -285,7 +285,7 @@ end
     seekstart(io)
     mach2 = machine(io)
     close(io)
-    @test_broken MLJBase.predict(mach2, (; x = rand(2))) ≈ fill(42.0, 2)
+    @test MLJBase.predict(mach2, (; x = rand(2))) ≈ fill(42.0, 2)
 end
 
 end
