@@ -247,14 +247,14 @@ mutable struct EphemeralRegressor <: Deterministic
 end
 EphemeralRegressor(; n=1) = EphemeralRegressor(n)
 function MLJBase.fit(::EphemeralRegressor, verbosity, X, y)
-    # if I serialize/deserialized `thing` then `view` below changes:
-    view = objectid(thing)
-    fitresult = (thing, view, mean(y))
+    # if I serialize/deserialized `thing` then `id` below changes:
+    id = objectid(thing)
+    fitresult = (thing, id, mean(y))
     return fitresult, nothing, NamedTuple()
 end
 function MLJBase.predict(::EphemeralRegressor, fitresult, X)
-    thing, view, μ = fitresult
-    return view == objectid(thing) ? fill(μ, nrows(X)) :
+    thing, id, μ = fitresult
+    return id == objectid(thing) ? fill(μ, nrows(X)) :
         throw(ErrorException("dead fitresult"))
 end
 MLJBase.iteration_parameter(::EphemeralRegressor) = :n
@@ -264,8 +264,8 @@ function MLJBase.save(::EphemeralRegressor, fitresult)
 end
 function MLJBase.restore(::EphemeralRegressor, serialized_fitresult)
     thing, μ = serialized_fitresult
-    view = objectid(thing)
-    return (thing, view, μ)
+    id = objectid(thing)
+    return (thing, id, μ)
 end
 
 @testset "save and restore" begin
