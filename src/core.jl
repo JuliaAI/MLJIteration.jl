@@ -151,3 +151,7 @@ MLJBase.predict(::EitherIteratedModel, fitresult, Xnew) =
 
 MLJBase.transform(::EitherIteratedModel, fitresult, Xnew) =
     transform(fitresult, Xnew)
+
+# here `fitresult` is a trained atomic machine:
+MLJBase.save(::EitherIteratedModel, fitresult) = MLJBase.serializable(fitresult)
+MLJBase.restore(::EitherIteratedModel, fitresult) = MLJBase.restore!(fitresult)
