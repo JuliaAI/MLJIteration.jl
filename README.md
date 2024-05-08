@@ -2,11 +2,11 @@
 
 | Linux | Coverage | Documentation |
 | :-----------: | :------: | :-------:|
-| [![Build status](https://github.com/JuliaAI/MLJIteration.jl/workflows/CI/badge.svg)](https://github.com/JuliaAI/MLJIteration.jl/actions)| [![codecov.io](http://codecov.io/github/JuliaAI/MLJIteration.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaAI/MLJIteration.jl?branch=master) | [![docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://alan-turing-institute.github.io/MLJ.jl/dev/controlling_iterative_models/)|
+| [![Build status](https://github.com/JuliaAI/MLJIteration.jl/workflows/CI/badge.svg)](https://github.com/JuliaAI/MLJIteration.jl/actions)| [![codecov.io](http://codecov.io/github/JuliaAI/MLJIteration.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaAI/MLJIteration.jl?branch=master) | [![docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaAI.github.io/MLJ.jl/dev/controlling_iterative_models/)|
 
 
 A package for wrapping iterative models provided by the
-[MLJ](https://alan-turing-institute.github.io/MLJ.jl/dev/) machine
+[MLJ](https://JuliaAI.github.io/MLJ.jl/dev/) machine
 learning framework in a control strategy.
 
 Builds on the generic iteration control tool
@@ -16,7 +16,7 @@ Builds on the generic iteration control tool
 ## Installation
 
 Included as part of
-[MLJ installation](https://alan-turing-institute.github.io/MLJ.jl/dev/#Installation-1). 
+[MLJ installation](https://JuliaAI.github.io/MLJ.jl/dev/#Installation-1). 
 
 Alternatively, for a "minimal" installation:
 
@@ -54,7 +54,7 @@ mach = machine(iterated_model, X, y) |> fit!;
 ## Documentation
 
 See the [Controlling Iterative
-Models](https://alan-turing-institute.github.io/MLJ.jl/dev/controlling_iterative_models/)
+Models](https://JuliaAI.github.io/MLJ.jl/dev/controlling_iterative_models/)
 section of the [MLJ
-manual](https://alan-turing-institute.github.io/MLJ.jl/dev/).
+manual](https://JuliaAI.github.io/MLJ.jl/dev/).
 
