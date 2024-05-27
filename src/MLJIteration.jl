@@ -17,7 +17,7 @@ const CONTROLS = vcat(IterationControl.CONTROLS,
                        :WithModelDo,
                        :CycleLearningRate,
                        :Save])
-
+const CONTROLS_LIST = join(map(c->"$c()", CONTROLS), ", ", " and ")
 const TRAINING_CONTROLS = [:Step, ]
 
 # export all control types:
@@ -41,7 +41,5 @@ include("constructors.jl")
 include("traits.jl")
 include("ic_model.jl")
 include("core.jl")
-
-
 
 end # module
