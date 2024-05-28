@@ -73,7 +73,7 @@ err_bad_iteration_parameter(p) =
 
 """
     IteratedModel(model;
-        controls=...,
+        controls=MLJIteration.CONTROLS_DEFAULT,
         resampling=Holdout(),
         measure=nothing,
         retrain=false,
