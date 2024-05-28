@@ -25,7 +25,7 @@ for control in CONTROLS
     eval(:(export $control))
 end
 
-const CONTROLS_DEFAULT = [Step(1),
+const DEFAULT_CONTROLS = [Step(1),
                           Patience(5),
                           GL(),
                           TimeLimit(0.03), # about 2 mins

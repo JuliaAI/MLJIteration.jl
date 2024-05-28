@@ -73,7 +73,7 @@ err_bad_iteration_parameter(p) =
 
 """
     IteratedModel(model;
-        controls=MLJIteration.CONTROLS_DEFAULT,
+        controls=MLJIteration.DEFAULT_CONTROLS,
         resampling=Holdout(),
         measure=nothing,
         retrain=false,
@@ -98,7 +98,7 @@ Available controls: $CONTROLS_LIST.
 
 # Options
 
-- `controls=$CONTROLS_DEFAULT`: Controls are summarized at
+- `controls=$DEFAULT_CONTROLS`: Controls are summarized at
   [https://JuliaAI.github.io/MLJ.jl/dev/getting_started/](https://JuliaAI.github.io/MLJ.jl/dev/controlling_iterative_models/)
   but query individual doc-strings for details and advanced options. For creating your own
   controls, refer to the documentation just cited.
@@ -225,7 +225,7 @@ repeated application of the (updated) controls begin anew.
 """
 function IteratedModel(args...;
                        model=nothing,
-                       control=CONTROLS_DEFAULT,
+                       control=DEFAULT_CONTROLS,
                        controls=control,
                        resampling=MLJBase.Holdout(),
                        measures=nothing,
