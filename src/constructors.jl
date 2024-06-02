@@ -108,7 +108,7 @@ Available controls: $CONTROLS_LIST.
   as `WithLossDo`. Specify `resampling=nothing` if all data is to
   be used for controlled iteration, with each out-of-sample loss replaced by the most
   recent training loss, assuming this is made available by the model
-  (`supports_training_losses(model) == true`). If the model does not provide report a
+  (`supports_training_losses(model) == true`). If the model does not report a
   training loss, you can use `resampling=InSample()` instead, with an additional
   performance cost.  Otherwise, `resampling` must have type `Holdout` or be a vector with
   one element of the form `(train_indices, test_indices)`.
