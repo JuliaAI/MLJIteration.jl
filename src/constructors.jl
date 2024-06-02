@@ -105,7 +105,7 @@ Available controls: $CONTROLS_LIST.
 
 - `resampling=Holdout(fraction_train=0.7)`: The default resampling holds back 30% of data
   for computing an out-of-sample estimate of performance (the "loss") for controls such
-  as `WithLossDo` and stopping criterion; specify `resampling=nothing` if all data is to
+  as `WithLossDo`. Specify `resampling=nothing` if all data is to
   be used for controlled iteration, with each out-of-sample loss replaced by the most
   recent training loss, assuming this is made available by the model
   (`supports_training_losses(model) == true`). If the model does not provide report a
