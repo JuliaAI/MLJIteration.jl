@@ -104,14 +104,14 @@ Available controls: $CONTROLS_LIST.
   controls, refer to the documentation just cited.
 
 - `resampling=Holdout(fraction_train=0.7)`: The default resampling holds back 30% of data
-  for computing an out-of-sample estimate of performance (the "loss") for loss-based controls such
-  as `WithLossDo`. Specify `resampling=nothing` if all data is to
-  be used for controlled iteration, with each out-of-sample loss replaced by the most
-  recent training loss, assuming this is made available by the model
-  (`supports_training_losses(model) == true`). If the model does not report a
-  training loss, you can use `resampling=InSample()` instead, with an additional
-  performance cost.  Otherwise, `resampling` must have type `Holdout` or be a vector with
-  one element of the form `(train_indices, test_indices)`.
+  for computing an out-of-sample estimate of performance (the "loss") for loss-based
+  controls such as `WithLossDo`. Specify `resampling=nothing` if all data is to be used
+  for controlled iteration, with each out-of-sample loss replaced by the most recent
+  training loss, assuming this is made available by the model
+  (`supports_training_losses(model) == true`). If the model does not report a training
+  loss, you can use `resampling=InSample()` instead. Otherwise, `resampling` must have
+  type `Holdout` or be a vector with one element of the form `(train_indices,
+  test_indices)`.
 
 - `measure=nothing`: StatisticalMeasures.jl compatible measure for estimating model
   performance (the "loss", but the orientation is immaterial - i.e., this could be a
