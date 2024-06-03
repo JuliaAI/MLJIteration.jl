@@ -1,9 +1,7 @@
 MLJBase.is_wrapper(::Type{<:EitherIteratedModel}) = true
 MLJBase.caches_data_by_default(::Type{<:EitherIteratedModel}) = false
-MLJBase.load_path(::Type{<:DeterministicIteratedModel}) =
-    "MLJIteration.DeterministicIteratedModel"
-MLJBase.load_path(::Type{<:ProbabilisticIteratedModel}) =
-    "MLJIteration.ProbabilisticIteratedModel"
+MLJBase.load_path(::Type{<:EitherIteratedModel}) = "MLJIteration.IteratedModel"
+MLJBase.constructor(::Type{<:EitherIteratedModel}) = IteratedModel
 MLJBase.package_name(::Type{<:EitherIteratedModel}) = "MLJIteration"
 MLJBase.package_uuid(::Type{<:EitherIteratedModel}) =
     "614be32b-d00c-4edb-bd02-1eb411ab5e55"
