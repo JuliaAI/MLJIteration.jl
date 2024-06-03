@@ -6,6 +6,7 @@ using IterationControl
 using MLJBase
 using MLJModelInterface
 using StatisticalMeasures
+using StableRNGs
 using ..DummyModel
 
 X, y = make_dummy(N=20)
@@ -26,6 +27,7 @@ model = DummyIterativeModel(n=0)
     end
     IterationControl.loss(mach::Machine{<:DummyIterativeModel}) =
         last(training_losses(mach))
+
     IterationControl.train!(mach, controls..., verbosity=0)
     losses1 = report(mach).training_losses
     yhat1 = predict(mach, X)
@@ -102,6 +104,26 @@ model = DummyIterativeModel(n=0)
                (:info, r""),
                fit!(mach))
     @test report(mach).n_iterations == 5
+end
+
+@testset "resampling = InSample()" begin
+    model = DummyIterativeModel(n=0, rng=StableRNG(123))
+    controls=[Step(2), NumberLimit(10)]
+
+    # using `resampling=nothing`:
+    imodel = IteratedModel(model=model, controls=controls, resampling=nothing)
+    mach = machine(imodel, X, y)
+    fit!(mach, verbosity=0)
+    y1 = predict(mach, rows=1:10)
+
+    # using `resampling=InSample()`:
+    model = DummyIterativeModel(n=0, rng=StableRNG(123))
+    imodel = IteratedModel(model=model, controls=controls, resampling=InSample())
+    mach = machine(imodel, X, y)
+    fit!(mach, verbosity=0)
+    y2 = predict(mach, rows=1:10)
+
+    @test y1 == y2
 end
 
 @testset "integration: resampling=Holdout()" begin
@@ -269,7 +291,7 @@ function MLJBase.restore(::EphemeralRegressor, serialized_fitresult)
 end
 
 @testset "save and restore" begin
-    #https://github.com/alan-turing-institute/MLJ.jl/issues/1099
+    #https://github.com/JuliaAI/MLJ.jl/issues/1099
     X, y = (; x = rand(10)), fill(42.0, 3)
     controls = [Step(1), NumberLimit(2)]
     imodel = IteratedModel(

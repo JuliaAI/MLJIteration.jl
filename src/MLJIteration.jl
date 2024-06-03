@@ -17,7 +17,7 @@ const CONTROLS = vcat(IterationControl.CONTROLS,
                        :WithModelDo,
                        :CycleLearningRate,
                        :Save])
-
+const CONTROLS_LIST = join(map(c->"$c()", CONTROLS), ", ", " and ")
 const TRAINING_CONTROLS = [:Step, ]
 
 # export all control types:
@@ -25,7 +25,7 @@ for control in CONTROLS
     eval(:(export $control))
 end
 
-const CONTROLS_DEFAULT = [Step(1),
+const DEFAULT_CONTROLS = [Step(1),
                           Patience(5),
                           GL(),
                           TimeLimit(0.03), # about 2 mins
@@ -41,7 +41,5 @@ include("constructors.jl")
 include("traits.jl")
 include("ic_model.jl")
 include("core.jl")
-
-
 
 end # module
