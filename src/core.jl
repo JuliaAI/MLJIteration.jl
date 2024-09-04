@@ -155,3 +155,11 @@ MLJBase.transform(::EitherIteratedModel, fitresult, Xnew) =
 # here `fitresult` is a trained atomic machine:
 MLJBase.save(::EitherIteratedModel, fitresult) = MLJBase.serializable(fitresult)
 MLJBase.restore(::EitherIteratedModel, fitresult) = MLJBase.restore!(fitresult)
+
+# Feature importances
+function MLJBase.feature_importances(::EitherIteratedModel, fitresult, report)
+    # fitresult here is the curent state of the iterated machine 
+    # The line below will return `nothing` when the iteration model doesn't
+    # support feature_importances.
+    return MLJBase.feature_importances(fitresult)
+end

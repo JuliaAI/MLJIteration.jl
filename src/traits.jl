@@ -15,6 +15,7 @@ for trait in [:supports_weights,
               :is_pure_julia,
               :input_scitype,
               :output_scitype,
+              :reports_feature_importances,
               :target_scitype]
     quote
         # needed because traits are not always deducable from

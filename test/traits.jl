@@ -23,6 +23,7 @@ imodel = IteratedModel(model=model, measure=mae)
 @test output_scitype(imodel) == output_scitype(model)
 @test target_scitype(imodel) == target_scitype(model)
 @test constructor(imodel) == IteratedModel
+@test reports_feature_importances(imodel) == reports_feature_importances(model)
 
 end
 
