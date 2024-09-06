@@ -272,8 +272,10 @@ function MLJBase.fit(::EphemeralRegressor, verbosity, X, y)
     # if I serialize/deserialized `thing` then `id` below changes:
     id = objectid(thing)
     fitresult = (thing, id, mean(y))
-    return fitresult, nothing, NamedTuple()
+    report = (importances = [ftr => 1.0 for ftr in MLJBase.schema(X).names], )
+    return fitresult, nothing, report
 end
+
 function MLJBase.predict(::EphemeralRegressor, fitresult, X)
     thing, id, μ = fitresult
     return id == objectid(thing) ? fill(μ, nrows(X)) :
@@ -290,7 +292,12 @@ function MLJBase.restore(::EphemeralRegressor, serialized_fitresult)
     return (thing, id, μ)
 end
 
-@testset "save and restore" begin
+MLJBase.reports_feature_importances(::Type{<:EphemeralRegressor}) = true
+function MLJBase.feature_importances(::EphemeralRegressor, fitresult, report)
+    return report.importances
+end
+
+@testset "feature importances, save and restore" begin
     #https://github.com/JuliaAI/MLJ.jl/issues/1099
     X, y = (; x = rand(10)), fill(42.0, 3)
     controls = [Step(1), NumberLimit(2)]
@@ -302,12 +309,14 @@ end
     )
     mach = machine(imodel, X, y)
     fit!(mach, verbosity=0)
+    @test MLJBase.feature_importances(mach) == [:x => 1.0];
     io = IOBuffer()
     MLJBase.save(io, mach)
     seekstart(io)
     mach2 = machine(io)
     close(io)
     @test MLJBase.predict(mach2, (; x = rand(2))) ≈ fill(42.0, 2)
+    
 end
 
 end
