@@ -98,10 +98,10 @@ Available controls: $CONTROLS_LIST.
 
 # Options
 
-- `controls=$DEFAULT_CONTROLS`: Controls are summarized at
-  [https://JuliaAI.github.io/MLJ.jl/dev/getting_started/](https://JuliaAI.github.io/MLJ.jl/dev/controlling_iterative_models/)
+- `controls=$DEFAULT_CONTROLS`: Controls are summarized at the
+  "[Controls-provided](https://juliaai.github.io/MLJ.jl/dev/controlling_iterative_models/#Controls-provided)" section,
   but query individual doc-strings for details and advanced options. For creating your own
-  controls, refer to the documentation just cited.
+  controls, refer to the "[Custom controls](https://juliaai.github.io/MLJ.jl/dev/controlling_iterative_models/#Custom-controls)" section.
 
 - `resampling=Holdout(fraction_train=0.7)`: The default resampling holds back 30% of data
   for computing an out-of-sample estimate of performance (the "loss") for loss-based
