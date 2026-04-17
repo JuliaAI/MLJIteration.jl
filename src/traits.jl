@@ -26,7 +26,7 @@ for trait in [:supports_weights,
         quote
             # try to get trait at level of types ("failure" here just
             # means falling back to `Unknown`):
-            MLJBase.$trait(::Type{<:$T{M}}) where M = MLJBase.$trait(M)
+            MLJBase.$trait(::Type{<:$T{M,L}}) where {M,L} = MLJBase.$trait(M)
         end |> eval
     end
 end

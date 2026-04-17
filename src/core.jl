@@ -91,7 +91,8 @@ function MLJBase.fit(iterated_model::EitherIteratedModel, verbosity, data...)
                                   class_weights=iterated_model.class_weights,
                                   operation=iterated_model.operation,
                                   check_measure=iterated_model.check_measure,
-                                  cache=iterated_model.cache)
+                                  cache=iterated_model.cache,
+                                  logger=iterated_model.logger)
         machine(resampler, data..., cache=false)
     end
 

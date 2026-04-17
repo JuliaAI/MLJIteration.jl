@@ -4,7 +4,7 @@ const IterationResamplingTypes =
 
 ## TYPES AND CONSTRUCTOR
 
-mutable struct DeterministicIteratedModel{M<:Deterministic} <: MLJBase.Deterministic
+mutable struct DeterministicIteratedModel{M<:Deterministic,L} <: MLJBase.Deterministic
     model::M
     controls
     resampling # resampling strategy
@@ -16,9 +16,10 @@ mutable struct DeterministicIteratedModel{M<:Deterministic} <: MLJBase.Determini
     check_measure::Bool
     iteration_parameter::Union{Nothing,Symbol,Expr}
     cache::Bool
+    logger::L
 end
 
-mutable struct ProbabilisticIteratedModel{M<:Probabilistic} <: MLJBase.Probabilistic
+mutable struct ProbabilisticIteratedModel{M<:Probabilistic,L} <: MLJBase.Probabilistic
     model::M
     controls
     resampling # resampling strategy
@@ -30,6 +31,7 @@ mutable struct ProbabilisticIteratedModel{M<:Probabilistic} <: MLJBase.Probabili
     check_measure::Bool
     iteration_parameter::Union{Nothing,Symbol,Expr}
     cache::Bool
+    logger::L
 end
 
 const ERR_MISSING_TRAINING_CONTROL =
@@ -39,8 +41,8 @@ const ERR_MISSING_TRAINING_CONTROL =
 
 const ERR_TOO_MANY_ARGUMENTS =
     ArgumentError("At most one non-keyword argument allowed. ")
-const EitherIteratedModel{M} =
-    Union{DeterministicIteratedModel{M},ProbabilisticIteratedModel{M}}
+const EitherIteratedModel{M,L} =
+    Union{DeterministicIteratedModel{M,L},ProbabilisticIteratedModel{M,L}}
 const ERR_NOT_SUPERVISED =
     ArgumentError("Only `Deterministic` and `Probabilistic` "*
                   "model types supported.")
@@ -148,6 +150,10 @@ Available controls: $CONTROLS_LIST.
   between iteration parameter increments; specify `cache=false` to prioritize memory over
   speed.
 
+- `logger=default_logger()`: a logger for externally reporting model performance
+  evaluations, such as an `MLJFlow.Logger` instance. On startup,
+  `default_logger()=nothing`; use `default_logger(logger)` to set a global logger.
+
 
 # Training
 
@@ -236,7 +242,8 @@ function IteratedModel(args...;
                        retrain=false,
                        check_measure=true,
                        iteration_parameter=nothing,
-                       cache=true)
+                       cache=true,
+                       logger=MLJBase.default_logger())
 
     length(args) < 2 || throw(ArgumentError("At most one non-keyword argument allowed. "))
     if length(args) === 1
@@ -260,6 +267,7 @@ function IteratedModel(args...;
         check_measure,
         iteration_parameter,
         cache,
+        logger,
     )
 
     if atom isa Deterministic
