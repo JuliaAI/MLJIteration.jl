@@ -50,14 +50,14 @@ for str in keys(EXTRACTOR_GIVEN_STR) # eg, "fitted_params"
     extractor = EXTRACTOR_GIVEN_STR[str]
 
     quote
-        struct $C{F<:Function}
-            f::F
+        struct $C
+            f
             stop_if_true::Bool
             stop_message::Union{String,Nothing}
         end
 
         # constructor:
-        $C(f::Function;
+        $C(f;
            stop_if_true=false,
            stop_message=nothing) = $C(f, stop_if_true, stop_message)
         $C(; f=identity, kwargs...) =
