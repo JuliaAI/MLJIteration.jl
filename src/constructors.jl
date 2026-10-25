@@ -17,6 +17,8 @@ mutable struct DeterministicIteratedModel{M<:Deterministic,L} <: MLJBase.Determi
     iteration_parameter::Union{Nothing,Symbol,Expr}
     cache::Bool
     logger::L
+    compact_traces::Bool
+    warm_restart_extends_traces::Bool
 end
 
 mutable struct ProbabilisticIteratedModel{M<:Probabilistic,L} <: MLJBase.Probabilistic
@@ -32,6 +34,8 @@ mutable struct ProbabilisticIteratedModel{M<:Probabilistic,L} <: MLJBase.Probabi
     iteration_parameter::Union{Nothing,Symbol,Expr}
     cache::Bool
     logger::L
+    compact_traces::Bool
+    warm_restart_extends_traces::Bool
 end
 
 const ERR_MISSING_TRAINING_CONTROL =
@@ -74,7 +78,8 @@ err_bad_iteration_parameter(p) =
     ArgumentError("Model to be iterated does not have :($p) as an iteration parameter. ")
 
 """
-    IteratedModel(model;
+    IteratedModel(
+        model;
         controls=MLJIteration.DEFAULT_CONTROLS,
         resampling=Holdout(),
         measure=nothing,
@@ -82,38 +87,94 @@ err_bad_iteration_parameter(p) =
         advanced_options...,
     )
 
-Wrap the specified supervised `model` in the specified iteration `controls`. Here `model`
-should support iteration, which is true if (`iteration_parameter(model)` is different from
+Wrap the iterative, supervised `model` in the specified iteration `controls`. Here `model`
+should support iteration, which is true if `iteration_parameter(model)` is different from
 `nothing`.
+
+The wrapped model behaves much like `model` except that the iteration hyperparameter is
+"learned" rather than fixed ahead of time by the user. Additionally, unless
+`retrain=true`, some of the data presented for training will have been used exclusively to
+calculate an out-of-sample loss for stopping criteria, and so not directly used to infer
+other learned parameters used in subsequent prediction.
+
+The controls will include a `Step(k)` control, specifying the number, `k`, of iterations
+between "control cycles", and one or more stopping criterion, such as `Patience(6)`, which
+can signal that the current control cycle will be the last. Other assorted callback
+controls are available. For more on the training logic, see "Training" under "Extended
+help" below.
+
+```julia-repl
+using MLJBase, MLJIteration, StatisticalMeasures # or just `using MLJ`
+using EvoTrees
+using Dates
+
+X, y = make_moons(); # a table and a vector
+model = EvoTreeClassifier(seed=123)
+controls = [Step(2), Threshold(0.3), InvalidValue(), TimeLimit(Second(10))]
+iterated_model = IteratedModel(
+    model;
+    controls,
+    resampling=Holdout(fraction_train=0.8),
+    measure=brier_loss,
+)
+mach = machine(iterated_model, X, y)
+
+julia> fit!(mach)
+[ Info: Training machine(ProbabilisticIteratedModel(model = EvoTreeClassifier(loss = mlogloss, …), …), …).
+[ Info: Training machine(ProbabilisticIteratedModel(model = EvoTreeClassifier(loss = mlogloss, …), …), …).
+[ Info: No iteration parameter specified. Using `iteration_parameter=:(nrounds)`.
+[ Info: final loss: 0.27815571427345276
+[ Info: Stop triggered by Threshold(0.3) stopping criterion.
+[ Info: Total of 4 iterations.
+
+julia> report(mach).n_iterations
+4
+
+julia> traces = report(mach).traces
+4-element Vector{Any}:
+ ControlTrace{<:Step}, ending (new_iterations = 4, new_steps = 2)
+ ControlTrace{<:Threshold}, ending (loss = 0.27815571427345276, excess = -0.02184428572654723)
+ ControlTrace{<:InvalidValue}, ending (encountered = nothing,)
+ ControlTrace{<:TimeLimit}, ending (time = DateTime("2026-10-23T17:19:04.844"),)
+
+julia> traces[2] |> pretty
+┌────────────┬────────────┐
+│ loss       │ excess     │
+│ Float64    │ Float64    │
+│ Continuous │ Continuous │
+├────────────┼────────────┤
+│ 0.339146   │ 0.0391458  │
+│ 0.278156   │ -0.0218443 │
+└────────────┴────────────┘
+```
 
 Available controls: $CONTROLS_LIST.
 
-!!! important
-
-    To make out-of-sample losses available to the controls, the wrapped `model` is only
-    trained on part of the data, as iteration proceeds. The user may want to force
-    retraining on all data after controlled iteration has finished by specifying
-    `retrain=true`. See also "Training", and the `retrain` option, under "Extended help"
-    below.
-
 # Extended help
+
+Note there is a generally a difference between the total number of iterations and the
+number of control cycles, because each control cycle begins with `k` iterations of the
+wrapped model, when `controls = [`Step(k)`, ...]`. In control names (e.g, `NumberLimit`
+and `WithNumberDo`) and in documentation, "number" means "number of steps", not number of
+iterations.
 
 # Options
 
-- `controls=$DEFAULT_CONTROLS`: Controls are summarized at the
-  "[Controls-provided](https://juliaai.github.io/MLJ.jl/dev/controlling_iterative_models/#Controls-provided)" section,
-  but query individual doc-strings for details and advanced options. For creating your own
-  controls, refer to the "[Custom controls](https://juliaai.github.io/MLJ.jl/dev/controlling_iterative_models/#Custom-controls)" section.
+- `controls=$DEFAULT_CONTROLS`: A vector of controls, which are summarized at the
+  "[Controls-provided](https://juliaai.github.io/MLJ.jl/dev/controlling_iterative_models/#Controls-provided)"
+  section of the MLJ manual, but query individual doc-strings for details and advanced
+  options. For creating your own controls, refer to the "[Custom
+  controls](https://juliaai.github.io/MLJ.jl/dev/controlling_iterative_models/#Custom-controls)"
+  section of the MLJ manual.
 
 - `resampling=Holdout(fraction_train=0.7)`: The default resampling holds back 30% of data
   for computing an out-of-sample estimate of performance (the "loss") for loss-based
-  controls such as `WithLossDo`. Specify `resampling=nothing` if all data is to be used
-  for controlled iteration, with each out-of-sample loss replaced by the most recent
-  training loss, assuming this is made available by the model
-  (`supports_training_losses(model) == true`). If the model does not report a training
-  loss, you can use `resampling=InSample()` instead. Otherwise, `resampling` must have
-  type `Holdout` or be a vector with one element of the form `(train_indices,
-  test_indices)`.
+  controls such as `WithLossDo`. Specify `resampling=InSample()` to use all data for
+  training and to compute a training loss as a proxy for the out-of-sample loss. If
+  `supports_training_losses(model) == true`, you can specify `resampling=nothing` to
+  instead use the training loss reported by the model and avoid the extra
+  computation. Otherwise, `resampling` must have type `Holdout` or be a vector with one
+  element of the form `(train_indices, test_indices)`.
 
 - `measure=nothing`: StatisticalMeasures.jl compatible measure for estimating model
   performance (the "loss", but the orientation is immaterial - i.e., this could be a
@@ -127,6 +188,14 @@ Available controls: $CONTROLS_LIST.
   composite model. If `retrain=false` (default) and `resampling isa Holdout`, then
   `iterated_model` behaves like the original model trained on a subset of the provided
   data.
+
+- `compact_traces=false`: Whether to record full traces of each control or to retain only
+  the most recent state; traces appear in the `IteratedModel` machine report.
+
+- `warm_restart_extends_traces=false`: If `true`, then in warm restarts traces are
+  extended rather than created afresh. This option is only supported if the control types
+  remain unchanged on the new call to `fit!`. Traces appear in the `IteratedModel` machine
+  report.
 
 - `weights=nothing`: per-observation weights to be passed to `measure` where supported; if
   unspecified, these are understood to be uniform.
@@ -160,32 +229,31 @@ Available controls: $CONTROLS_LIST.
 Training an instance `iterated_model` of `IteratedModel` on some `data` (by binding to a
 machine and calling `fit!`, for example) performs the following actions:
 
-- Assuming `resampling !== nothing`, the `data` is split into *train* and *test* sets,
-  according to the specified `resampling` strategy.
+- The the `data` is split into *train* and *test* sets, according to the specified
+  `resampling` strategy. If `resampling isa Holdout` (the default) then train and test are
+  disjoint, if `resampling == InSample()`, then train and test both point to teh entire
+  dataset provided. See under "resampling" above.
 
 - A clone of the wrapped model, `model` is bound to the train data in an internal machine,
-  `train_mach`. If `resampling === nothing`, all data is used instead. This machine is the
-  object to which controls are applied. For example, `Callback(fitted_params |> print)`
-  will print the value of `fitted_params(train_mach)`.
+  `train_mach`. This machine is the object to which controls are applied. For example,
+  `Callback(fitted_params |> print)` will print the value of `fitted_params(train_mach)`.
 
 - The iteration parameter of the clone is set to `0`.
 
 - The specified `controls` are repeatedly applied to `train_mach` in sequence, until one
   of the controls triggers a stop. Loss-based controls (eg, `Patience()`, `GL()`,
-  `Threshold(0.001)`) use an out-of-sample loss, obtained by applying `measure` to
-  predictions and the test target values. (Specifically, these predictions are those
-  returned by `operation(train_mach)`.)  If `resampling === nothing` then the most recent
-  training loss is used instead. Some controls require *both* out-of-sample and training
-  losses (eg, `PQ()`).
+  `Threshold(0.001)`) use a loss based on the test data, applying `measure` to predictions
+  on the test inputs paired with the test target values. (Specifically, these predictions
+  are those returned by `operation(train_mach)`.)
 
 - Once a stop has been triggered, a clone of `model` is bound to all `data` in a machine
-  called `mach_production` below, unless `retrain == false` (true by default) or
-  `resampling === nothing`, in which case `mach_production` coincides with `train_mach`.
+  called `production_machine` below, unless `retrain == false` (true by default) or
+  `resampling === nothing`, in which case `production_machine` coincides with `train_mach`.
 
 
 # Prediction
 
-Calling `predict(mach, Xnew)` in the example above returns `predict(mach_production,
+Calling `predict(mach, Xnew)` in the example above returns `predict(production_machine,
 Xnew)`. Similar similar statements hold for `predict_mean`, `predict_mode`,
 `predict_median`.
 
@@ -223,27 +291,31 @@ More generally, if `iterated_model` is mutated and `fit!(mach)` is called again,
 warm restart is attempted if the only parameters to change are `model` or `controls` or
 both.
 
-Specifically, `train_mach.model` is mutated to match the current value
-of `iterated_model.model` and the iteration parameter of the latter is
-updated to the last value used in the preceding `fit!(mach)` call. Then
-repeated application of the (updated) controls begin anew.
+Specifically, `train_mach.model` is mutated to match the current value of
+`iterated_model.model` and the iteration parameter of the latter is updated to the last
+value used in the preceding `fit!(mach)` call. Then repeated application of the (updated)
+controls begin anew.
 
 """
-function IteratedModel(args...;
-                       model=nothing,
-                       control=DEFAULT_CONTROLS,
-                       controls=control,
-                       resampling=MLJBase.Holdout(),
-                       measures=nothing,
-                       measure=measures,
-                       weights=nothing,
-                       class_weights=nothing,
-                       operation=nothing,
-                       retrain=false,
-                       check_measure=true,
-                       iteration_parameter=nothing,
-                       cache=true,
-                       logger=MLJBase.default_logger())
+function IteratedModel(
+    args...;
+    model=nothing,
+    control=DEFAULT_CONTROLS,
+    controls=control,
+    resampling=MLJBase.Holdout(),
+    measures=nothing,
+    measure=measures,
+    weights=nothing,
+    class_weights=nothing,
+    operation=nothing,
+    retrain=false,
+    check_measure=true,
+    iteration_parameter=nothing,
+    cache=true,
+    logger=MLJBase.default_logger(),
+    compact_traces=false,
+    warm_restart_extends_traces=false,
+    )
 
     length(args) < 2 || throw(ArgumentError("At most one non-keyword argument allowed. "))
     if length(args) === 1
@@ -268,6 +340,8 @@ function IteratedModel(args...;
         iteration_parameter,
         cache,
         logger,
+        compact_traces,
+        warm_restart_extends_traces,
     )
 
     if atom isa Deterministic

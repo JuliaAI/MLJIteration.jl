@@ -1,5 +1,3 @@
-module TestCore
-
 using Test
 using MLJIteration
 using IterationControl
@@ -8,12 +6,10 @@ using MLJModelInterface
 using StatisticalMeasures
 using StableRNGs
 using MLJDecisionTreeInterface
-using ..DummyModel
-
-X, y = make_dummy(N=20)
-model = DummyIterativeModel(n=0)
+using .DummyModel
 
 @testset "integration: resampling=nothing" begin
+    X, y = make_dummy(N=20);
 
     model = DummyIterativeModel(n=0)
     controls=[Step(2), Threshold(0.01), TimeLimit(0.005)]
@@ -34,17 +30,20 @@ model = DummyIterativeModel(n=0)
     yhat1 = predict(mach, X)
 
     # using IteratedModel wrapper:
-    imodel = IteratedModel(model=model,
-                           controls=controls,
-                           resampling=nothing)
+    imodel = IteratedModel(
+        model,
+        controls=controls,
+        resampling=nothing,)
     mach = machine(imodel, X, y)
-    @test_logs((:info, r"Training"),
-               (:info, MLJIteration.info_unspecified_iteration_parameter(:n)),
-               (:info, r"final loss"),
-               (:info, r"final training loss"),
-               (:info, r"Stop"),
-               (:info, r"Total"),
-               fit!(mach, verbosity=1))
+    @test_logs(
+        (:info, r"Training"),
+        (:info, MLJIteration.info_unspecified_iteration_parameter(:n)),
+        (:info, r"final loss"),
+        (:info, r"final training loss"),
+        (:info, r"Stop"),
+        (:info, r"Total"),
+        fit!(mach, verbosity=1),
+    )
     imodel.resampling = nothing
     @test_logs fit!(mach, verbosity=0)
 
@@ -59,23 +58,27 @@ model = DummyIterativeModel(n=0)
     # report:
     r = report(mach)
     @test r.model_report.training_losses ≈ losses1
-    @test :controls in keys(r)
+    @test :traces in keys(r)
+    @test :new_iterations in propertynames(r.traces[1])
     i = r.n_iterations
     @test i == 38
 
     # warm restart when changing controls:
     noise(n) = fill((:info, r"43"), n)
-    imodel.controls = [Step(1),
-                       WithIterationsDo(i-> i>39,
-                                        stop_if_true=true),
-                       Info(x->"43")]
-    @test_logs((:info, r"Updating"),
-               noise(2)...,
-               (:info, r""),
-               (:info, r""),
-               (:info, r""),
-               (:info, r""),
-               fit!(mach))
+    imodel.controls = [
+        Step(1),
+        WithIterationsDo(i-> i>39, stop_if_true=true),
+        Info(x->"43"),
+    ]
+    @test_logs(
+        (:info, r"Updating"),
+        noise(2)...,
+        (:info, r""),
+        (:info, r""),
+        (:info, r""),
+        (:info, r""),
+        fit!(mach),
+    )
     @test report(mach).n_iterations == i + 2
 
     # warm restart when changing iteration parameter (trains one more
@@ -108,6 +111,7 @@ model = DummyIterativeModel(n=0)
 end
 
 @testset "resampling = InSample()" begin
+    X, y = make_dummy(N=20);
     model = DummyIterativeModel(n=0, rng=StableRNG(123))
     controls=[Step(2), NumberLimit(10)]
 
@@ -128,32 +132,38 @@ end
 end
 
 @testset "integration: resampling=Holdout()" begin
+    X, y = make_dummy(N=20);
+    train, test = partition(eachindex(y), 0.7)
 
     controls=[Step(2), Patience(4), TimeLimit(0.001)]
 
     # using IterationControl.jl directly:
-    mach = machine(deepcopy(model), X, y);
-    train, test = partition(eachindex(y), 0.7)
-    function IterationControl.train!(mach::Machine{<:DummyIterativeModel},
-                                     n::Int)
+    mach = machine(DummyIterativeModel(n=0), X, y);
+    function IterationControl.train!(
+        mach::Machine{<:DummyIterativeModel},
+        n::Int,
+        )
         mlj_model = mach.model
         mlj_model.n = mlj_model.n + n
         fit!(mach, rows=train, verbosity=0)
     end
     function IterationControl.loss(mach::Machine{<:DummyIterativeModel})
         yhat = predict(mach, rows=test)
-        return mae(yhat, y[test]) |> mean
+        return mae(yhat, y[test])
     end
-    IterationControl.train!(mach, controls...; verbosity=0)
-    losses1 = report(mach).training_losses;
+    traces = IterationControl.train!(mach, controls...; verbosity=1)
+    losses1 = report(mach).training_losses
     yhat1 = predict(mach, X[test]);
     niters = mach.model.n
     @test niters == length(losses1)
 
     # using IteratedModel wrapper:
-    imodel = IteratedModel(model=model,
-                           resampling=Holdout(fraction_train=0.7),
-                           controls=controls)
+    # initially we don't specify the measure:
+    imodel = IteratedModel(
+        DummyIterativeModel(n=0),
+        resampling=Holdout(fraction_train=0.7),
+        controls=controls,
+    )
     mach = machine(imodel, X, y)
     @test_logs((:info, r"Training"),
                (:info, MLJIteration.info_unspecified_iteration_parameter(:n)),
@@ -163,9 +173,9 @@ end
                (:info, r"Stop"),
                (:info, r"Total"),
                fit!(mach, verbosity=1))
-    imodel.measure = mae
-    @test_logs fit!(mach, verbosity=0)
-    losses2 = report(mach).model_report.training_losses;
+    imodel.measure = mae # this change triggers a restart from scratch
+    fit!(mach, verbosity=0)
+    losses2 = report(mach).model_report.training_losses
     yhat2 = predict(mach, X[test]);
 
     # compare:
@@ -173,11 +183,13 @@ end
     @test yhat1 ≈ yhat2
 
     # now repeat wrapper train with retrain=true:
-    imodel = IteratedModel(model=model,
-                           resampling=Holdout(fraction_train=0.7),
-                           controls=controls,
-                           retrain=true,
-                           measure=mae)
+    imodel = IteratedModel(
+        model=DummyIterativeModel(n=0),
+        resampling=Holdout(fraction_train=0.7),
+        controls=controls,
+        retrain=true,
+        measure=mae,
+    )
     mach = machine(imodel, X, y)
     fit!(mach, verbosity=0)
     losses3 = report(mach).model_report.training_losses
@@ -192,12 +204,42 @@ end
     losses4 = report(mach2).training_losses
     yhat4 = predict(mach2, X[test])
 
-    # check report:
-    r = report(mach2)
-
     # compare:
     @test losses3 ≈ losses4
     @test yhat3 ≈ yhat4
+end
+
+@testset "integration: continuation of traces in warm restarts" begin
+    X, y = make_dummy(N=20);
+
+    # train for 5 steps with a warm-restart after first 3:
+    controls=[Step(2), NumberLimit(3), WithLossDo()]
+    imodel = IteratedModel(
+        DummyIterativeModel(n=0),
+        resampling=Holdout(fraction_train=0.7),
+        controls=controls,
+        warm_restart_extends_traces=true,
+    )
+    mach = machine(imodel, X, y)
+    fit!(mach, verbosity=0)
+    controls[2] = NumberLimit(2) # control change means a warm restart
+    fit!(mach, verbosity=0)
+    losses = report(mach).traces[3].loss
+
+    # train for 5 steps in one go:
+    controls=[Step(2), NumberLimit(5), WithLossDo()]
+    imodel = IteratedModel(
+        DummyIterativeModel(n=0),
+        resampling=Holdout(fraction_train=0.7),
+        controls=controls,
+        warm_restart_extends_traces=true,
+    )
+    mach = machine(imodel, X, y)
+    fit!(mach, verbosity=0)
+    losses2 = report(mach).traces[3].loss
+
+    # compare:
+    @test losses2 ≈ losses
 end
 
 @testset "integration: cyclic learning rates" begin
@@ -246,6 +288,9 @@ end
 end
 
 @testset "issue #40" begin
+    X, y = make_dummy(N=20);
+    model = DummyIterativeModel(n=0)
+    
     # change trait to an incorrect value:
     MLJModelInterface.iteration_parameter(::Type{<:DummyIterativeModel}) = :junk
     @test iteration_parameter(model) == :junk
@@ -348,5 +393,4 @@ end
     @test losses ≈ losses1
 end
 
-end
 true
