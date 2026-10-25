@@ -7,6 +7,7 @@ using MLJBase
 using MLJModelInterface
 using StatisticalMeasures
 using StableRNGs
+using MLJDecisionTreeInterface
 using ..DummyModel
 
 X, y = make_dummy(N=20)
@@ -316,7 +317,35 @@ end
     mach2 = machine(io)
     close(io)
     @test MLJBase.predict(mach2, (; x = rand(2))) ≈ fill(42.0, 2)
-    
+end
+
+@testset "bug #83" begin
+    X, y = MLJBase.@load_iris;
+    model = RandomForestClassifier()
+    losses = Float64[]
+    controls=[Step(1), Patience(), WithLossDo(loss->push!(losses, loss))]
+
+    # use brier_loss:
+    imodel = IteratedModel(
+        model=model,
+        controls=controls,
+        measure = brier_loss,
+    )
+    mach = machine(imodel, X, y)
+    fit!(mach, verbosity=0)
+    losses1 = copy(losses)
+    empty!(losses)
+    @assert isempty(losses)
+
+    # use brier_score:
+    imodel = IteratedModel(
+        model=model,
+        controls=controls,
+        measure = brier_score,
+    )
+    mach = machine(imodel, X, y)
+    fit!(mach, verbosity=0)
+    @test losses ≈ losses1
 end
 
 end
