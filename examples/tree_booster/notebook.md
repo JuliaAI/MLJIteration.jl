@@ -79,7 +79,7 @@ Wrap the booster in iteration controls:
 ````@julia
 imodel = IteratedModel(
     model,
-    resampling=Holdout(rng=123),
+    resampling=Holdout(fraction_train=0.7, rng=123),
     measures=[brier_loss, log_loss],
     iteration_parameter=:nrounds,
     controls=[
@@ -161,7 +161,7 @@ step, with_iterationss_do, with_loss_do, callback, number_since_best, gl, time_l
  ControlTrace{<:Skip}, ending (called_back = nothing,)
  ControlTrace{<:NumberSinceBest}, ending (best = 0.006074362900108099, number_since_best = 1)
  ControlTrace{<:GL}, ending (loss = 0.006109416484832764, min_loss = 0.006074362900108099, GL = 0.5770742594921607)
- ControlTrace{<:TimeLimit}, ending (time = Dates.DateTime("2026-10-26T09:53:40.404"),)
+ ControlTrace{<:TimeLimit}, ending (time = Dates.DateTime("2026-10-26T10:06:35.247"),)
 ````
 
 We can get loss for every control cycle from the `WithLossDo` or `GL` trace:

@@ -30,30 +30,31 @@ Pkg.add("MLJModels")     # to load models
 
 ## Sample usage
 
-Assuming MLJ is installed:
+Assuming MLJ.jl and EvoTrees.jl are in your package environment:
 
 ```julia
-Pkg.add("EvoTrees")
-
 using MLJ
 
-X, y = make_moons(1000, rng=123)
+X, y = make_moons(1000)
 EvoTreeClassifier = @load EvoTreeClassifier verbosity=0
-
+model = EvoTreeClassifier(rng=123, eta=0.1, colsample=0.5)
 iterated_model = IteratedModel(
-    model=EvoTreeClassifier(rng=123, η=0.005),
-    resampling=Holdout(rng=123),
+    model,
+    resampling=Holdout(fraction_train=0.8),
     measures=log_loss,
     controls=[
-        Step(5),
+        Step(1),
         Patience(2),
-        NumberLimit(100)
+        WithLossDo(loss-> @info "holdout loss: $loss"),
+        NumberLimit(50),
     ],
     retrain=true,
 )
 
 mach = machine(iterated_model, X, y) |> fit!;
-report(mach).controls
+traces = report(mach).traces
+holdout_losses = traces[3].loss
+
 ```
 
 ## Documentation

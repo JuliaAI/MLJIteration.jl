@@ -41,7 +41,7 @@ end;
 
 imodel = IteratedModel(
     model,
-    resampling=Holdout(rng=123),
+    resampling=Holdout(fraction_train=0.7, rng=123),
     measures=[brier_loss, log_loss],
     iteration_parameter=:nrounds,
     controls=[
