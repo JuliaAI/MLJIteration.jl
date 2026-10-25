@@ -1,6 +1,5 @@
 # We will be wrapping MLJ machines/resampling machines
 # (cf. MLJBase/src/resampling.jl). It is for the wrapped type that we
-using MLJBase: ERR_BAD_METALEARNER
 # will be overloading the methods of `IterationControl`.
 
 const ERR_EVALUATION =
