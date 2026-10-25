@@ -5,6 +5,8 @@ using MLJBase
 using IterationControl
 import IterationControl: debug, skip, composite
 import IterationControl: update!, done, takedown, train!
+import StatisticalMeasuresBase
+import StatisticalMeasuresBase: Score, Loss
 
 export IteratedModel
 
@@ -17,7 +19,7 @@ const CONTROLS = vcat(IterationControl.CONTROLS,
                        :WithModelDo,
                        :CycleLearningRate,
                        :Save])
-const CONTROLS_LIST = join(map(c->"$c()", CONTROLS), ", ", " and ")
+const CONTROLS_LIST = join(map(c->"[`$c()`](@ref)", CONTROLS), ", ", " and ")
 const TRAINING_CONTROLS = [:Step, ]
 
 # export all control types:

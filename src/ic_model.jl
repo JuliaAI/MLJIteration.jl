@@ -5,6 +5,10 @@
 const ERR_EVALUATION =
     ArgumentError("There are no evaluation objects if `resampling=nothing`. ")
 
+const ERR_BAD_MEASURE = ArgumentError(
+"Specified `measure` is neither a loss nor a score. Check orientation "*
+    "with `StatisticalMeasuresBase.orientation(measure)`.")
+
 mlj_model(mach::Machine) = mach.model
 mlj_model(mach::Machine{<:Resampler}) = mach.model.model
 
@@ -65,8 +69,17 @@ function IterationControl.loss(m::ICModel)
 end
 
 # overloading `loss` - for `resampling isa Holdout`:
-IterationControl.loss(m::ICModel{<:Machine{<:Resampler}}) =
-    evaluate(m.mach).measurement |> first
+function IterationControl.loss(m::ICModel{<:Machine{<:Resampler}})
+    e = evaluate(m.mach)
+    measurement = first(e.measurement)
+    orientation = StatisticalMeasuresBase.orientation(first(e.measure))
+    if orientation == Score()
+        measurement *= -1
+    elseif orientation != Loss()
+        throw(ERR_BAD_MEASURE)
+    end
+    return measurement
+end
 
 # overloading `training_loss`:
 function IterationControl.training_losses(m::ICModel)
@@ -93,11 +106,13 @@ function Base.getproperty(m::ICModel, property::Symbol)
     property === :evaluation && return _evaluation(m)
     return getfield(m, property)
 end
-Base.propertynames(::ICModel) = (:machine,
-                                 :model,
-                                 :n_cycles,
-                                 :n_iterations,
-                                 :Δiterations,
-                                 :loss,
-                                 :training_losses,
-                                 :evaluation)
+Base.propertynames(::ICModel) = (
+    :machine,
+    :model,
+    :n_cycles,
+    :n_iterations,
+    :Δiterations,
+    :loss,
+    :training_losses,
+    :evaluation,
+)
