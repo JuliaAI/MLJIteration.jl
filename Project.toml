@@ -1,6 +1,6 @@
 name = "MLJIteration"
 uuid = "614be32b-d00c-4edb-bd02-1eb411ab5e55"
-version = "0.6.5"
+version = "0.6.6"
 authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
 
 [deps]
