@@ -231,7 +231,7 @@ machine and calling `fit!`, for example) performs the following actions:
 
 - The the `data` is split into *train* and *test* sets, according to the specified
   `resampling` strategy. If `resampling isa Holdout` (the default) then train and test are
-  disjoint, if `resampling == InSample()`, then train and test both point to teh entire
+  disjoint, if `resampling == InSample()`, then train and test both point to the entire
   dataset provided. See under "resampling" above.
 
 - A clone of the wrapped model, `model` is bound to the train data in an internal machine,
