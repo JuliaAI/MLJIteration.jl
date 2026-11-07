@@ -1,32 +1,25 @@
 using Test
 
+
 include("_dummy_model.jl")
 using .DummyModel
 
-@testset "utilities" begin
-    include("utilities.jl")
-end
+test_files = [
+    "utilities.jl",
+    "ic_model.jl",
+    "controls.jl",
+    "constructors.jl",
+    "core.jl",
+    "traits.jl",
+    "logger.jl",
+]
 
-@testset "ic_model" begin
-    include("ic_model.jl")
-end
+files = isempty(ARGS) ? test_files : ARGS
 
-@testset "controls" begin
-    include("controls.jl")
-end
-
-@testset "constructors" begin
-    include("constructors.jl")
-end
-
-@testset "core" begin
-    include("core.jl")
-end
-
-@testset "traits" begin
-    include("traits.jl")
-end
-
-@testset "logger" begin
-    include("logger.jl")
+for file in files
+    quote
+        @testset $file begin
+            include($file)
+        end
+    end |> eval
 end

@@ -27,7 +27,7 @@ function production_mach(iterated_model,
     end
 end
 
-function finish(prod_mach, ic_model, iterated_model, creport, verbosity)
+function finish(prod_mach, ic_model, iterated_model, traces, verbosity)
 
     iteration_param = ic_model.iteration_parameter
 
@@ -36,12 +36,17 @@ function finish(prod_mach, ic_model, iterated_model, creport, verbosity)
         "iterations. "
 
     fitresult = prod_mach
-    cache = (ic_model=ic_model,
-             iterated_model=deepcopy(iterated_model))
+    cache = (
+        ; ic_model=ic_model,
+        iterated_model=deepcopy(iterated_model),
+        traces,
+    )
 
-    report = (model_report=MLJBase.report(prod_mach),
-              controls=creport,
-              n_iterations=rget(prod_mach, iteration_param))
+    report = (
+        ; model_report=MLJBase.report(prod_mach),
+        traces,
+        n_iterations=rget(prod_mach, iteration_param),
+    )
     return fitresult, cache, report
 end
 
@@ -84,15 +89,17 @@ function MLJBase.fit(iterated_model::EitherIteratedModel, verbosity, data...)
     mach = if iterated_model.resampling === nothing
         machine(model, data...; cache=iterated_model.cache)
     else
-        resampler = MLJBase.Resampler(model=model,
-                                  resampling=iterated_model.resampling,
-                                  measure=measure,
-                                  weights=iterated_model.weights,
-                                  class_weights=iterated_model.class_weights,
-                                  operation=iterated_model.operation,
-                                  check_measure=iterated_model.check_measure,
-                                  cache=iterated_model.cache,
-                                  logger=iterated_model.logger)
+        resampler = MLJBase.Resampler(
+            model=model,
+            resampling=iterated_model.resampling,
+            measure=measure,
+            weights=iterated_model.weights,
+            class_weights=iterated_model.class_weights,
+            operation=iterated_model.operation,
+            check_measure=iterated_model.check_measure,
+            cache=iterated_model.cache,
+            logger=iterated_model.logger,
+        )
         machine(resampler, data..., cache=false)
     end
 
@@ -100,17 +107,22 @@ function MLJBase.fit(iterated_model::EitherIteratedModel, verbosity, data...)
     ic_model = ICModel(mach, iteration_param, verbosity)
 
     # train with controls:
-    creport = IterationControl.train!(ic_model,
-                                      iterated_model.controls...,
-                                      verbosity=verbosity)
+    traces = IterationControl.train!(
+        ic_model,
+        iterated_model.controls...;
+        verbosity=verbosity,
+        traces=[],
+    )
 
     # retrains on all data if necessary:
-    prod_mach = production_mach(iterated_model,
-                                ic_model,
-                                verbosity,
-                                data...)
+    prod_mach = production_mach(
+        iterated_model,
+        ic_model,
+        verbosity,
+        data...,
+    )
 
-    return finish(prod_mach, ic_model, iterated_model, creport, verbosity)
+    return finish(prod_mach, ic_model, iterated_model, traces, verbosity)
 
 end
 
@@ -123,29 +135,38 @@ function MLJBase.update(iterated_model::EitherIteratedModel,
     ic_model, old_iterated_model = old_cache
 
     # cold restart if anything but `controls` or `model` altered:
-    if !MLJBase.is_same_except(iterated_model,
-                              old_iterated_model,
-                              :model, :controls)
+    if !MLJBase.is_same_except(
+        iterated_model,
+        old_iterated_model,
+        :model,
+        :controls,
+        )
         return fit(iterated_model, verbosity, data...)
     end
 
     # otherwise, continue training with existing `ic_model`:
-    # train with controls:
-    creport = IterationControl.train!(ic_model,
-                                      iterated_model.controls...,
-                                      verbosity=verbosity)
+    newtraces = iterated_model.warm_restart_extends_traces ?
+        old_cache.traces : []
+    traces = IterationControl.train!(
+        ic_model,
+        iterated_model.controls...;
+        verbosity=verbosity,
+        traces=newtraces,
+    )
 
     # retrains on all data if necessary:
-    prod_mach = production_mach(iterated_model,
-                                ic_model,
-                                verbosity,
-                                data...)
+    prod_mach = production_mach(
+        iterated_model,
+        ic_model,
+        verbosity,
+        data...,
+    )
 
-    return finish(prod_mach, ic_model, iterated_model, creport, verbosity)
-
+    return finish(prod_mach, ic_model, iterated_model, traces, verbosity)
 end
 
-MLJBase.fitted_params(::EitherIteratedModel, fitresult) = (machine=fitresult,)
+MLJBase.fitted_params(::EitherIteratedModel, fitresult) =
+    (machine=fitresult,)
 
 MLJBase.predict(::EitherIteratedModel, fitresult, Xnew) =
     predict(fitresult, Xnew)
@@ -159,7 +180,7 @@ MLJBase.restore(::EitherIteratedModel, fitresult) = MLJBase.restore!(fitresult)
 
 # Feature importances
 function MLJBase.feature_importances(::EitherIteratedModel, fitresult, report)
-    # fitresult here is the curent state of the iterated machine 
+    # fitresult here is the curent state of the iterated machine
     # The line below will return `nothing` when the iteration model doesn't
     # support feature_importances.
     return MLJBase.feature_importances(fitresult)
