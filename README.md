@@ -16,7 +16,7 @@ Builds on the generic iteration control tool
 ## Installation
 
 Included as part of
-[MLJ installation](https://JuliaAI.github.io/MLJ.jl/dev/#Installation-1). 
+[MLJ installation](https://JuliaAI.github.io/MLJ.jl/dev/#Installation-1).
 
 Alternatively, for a "minimal" installation:
 

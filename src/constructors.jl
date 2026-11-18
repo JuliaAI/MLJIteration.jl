@@ -236,7 +236,8 @@ machine and calling `fit!`, for example) performs the following actions:
 
 - A clone of the wrapped model, `model` is bound to the train data in an internal machine,
   `train_mach`. This machine is the object to which controls are applied. For example,
-  `Callback(fitted_params |> print)` will print the value of `fitted_params(train_mach)`.
+  `WithFittedParamsDo(println)` prints to standard output the value of
+  `fitted_params(train_mach)`.
 
 - The iteration parameter of the clone is set to `0`.
 
