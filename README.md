@@ -27,7 +27,6 @@ Pkg.add("MLJIteration")
 Pkg.add("MLJModels")     # to load models
 ```
 
-
 ## Sample usage
 
 Assuming MLJ.jl and EvoTrees.jl are in your package environment:
