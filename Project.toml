@@ -14,6 +14,7 @@ StatisticalMeasuresBase = "c062fc1d-0d66-479b-b6ac-8b44719de4cc"
 IterationControl = "0.6"
 MLJBase = "1.5"
 MLJDecisionTreeInterface = "0.5"
+Serialization = "1.10"
 StatisticalMeasuresBase = "0.1"
 julia = "1.10"
 
